@@ -18,9 +18,9 @@ void setup() {
 
 void loop() {
   led_on();
-  delay(300);
+  delay(500);
   led_off();
-  delay(100);
+  delay(50);
 
 /*  led_on();
   delay(250);
