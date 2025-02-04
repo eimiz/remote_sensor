@@ -3,10 +3,13 @@
 #include "delay.h"
 #include "led.h"
 #include "uart.h"
-
-
+const uint8_t buffer[] = {"hello! "};
+uint16_t bpos = 0;
 void sendSomething() {
-    sendData1('j');
+    sendData1(buffer[bpos++]);
+    if (bpos >= sizeof(buffer)) {
+        bpos = 0;
+    }
 }
 
 
@@ -18,7 +21,7 @@ void setup() {
 
 void loop() {
   led_on();
-  delay(500);
+  delay(200);
   led_off();
   delay(50);
 
@@ -41,6 +44,7 @@ void loop() {
 }
 
 int main(void) {
+  delay(1000);
   setup();
   for(;;) {
     loop();
