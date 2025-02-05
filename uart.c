@@ -11,64 +11,40 @@ void initTxGpio() {
     uint32_t *pAENR = (uint32_t*)(UART_RCC_BOUNDARY_ADDRESS + 0x18);
     *pAENR |= (1 << IOPAEN);
 
-
-
     uint32_t *pGPIOL = (uint32_t *)(GPIO_BOUNDARY_ADDRESS + UART_CRL_OFFSET);
     //output mode, max speed 50mhz (01)
     *pGPIOL &= ~(0b11 << TX_MODE_BITPOS);
     *pGPIOL |= (0b11 << TX_MODE_BITPOS);
 
-
     //alternate output push pull (00);
     *pGPIOL &= ~(0b11 << TX_CNF_BITPOS);
     *pGPIOL |= 0b10 << TX_CNF_BITPOS;
-
-
-
-    //set value to 0
-//    uint32_t *pOdr = (uint32_t*)(GPIO_BOUNDARY_ADDRESS + UART_ODR_OFFSET);
- //   *pOdr &= ~(1 << TX_PIN);
-    
 }
 
 
 void initUart() {
- initTxGpio();
+     initTxGpio();
 
- uint32_t *pCR1 = (uint32_t *)UART_CR1;
- //disable uart
- *pCR1 &=  ~(1 << UART_UE_ENABLE);
+     uint32_t *pCR1 = (uint32_t *)UART_CR1;
+    //disable uart
+    *pCR1 &=  ~(1 << UART_UE_ENABLE);
 
     //enable UART2 clock
     uint32_t *pENR = (uint32_t *)UART_APB1ENR;
     *pENR |= 1 << UART_EN_BIT;
 
-    //reset uart2
-/*    uint32_t *rstReg = (uint32_t*) RCC_APB1RSTR;
-    *rstReg |= 1 << USART2_RST_BITPOS;
-*/
 
-//    return;
     uint32_t *pBRR = (uint32_t*)UART_BRR;
-    //set brr to 39.0625
+    //set boud rate 
     //12 higher bits main part, 4 lower bits - fraction
     *pBRR = 1 | (50 << 4);
-    //enable clock
-//    uint32_t *pCR2 = (uint32_t *)UART_CR2;
-//    *pCR2 = 1 << UART_PCLK_BIT;
-
-
 
     //enable transmitter and receiver
-    *pCR1 |=   (1 << UART_TE_ENABLE) | (1 << 2);
-
-
-
-
-
+    *pCR1 |=   (1 << UART_TE_ENABLE);
+    //enable uart
     *pCR1 |=  (1 << UART_UE_ENABLE);
-
 }
+
 void toggleGpio() {
     uint32_t *pOdr = (uint32_t*)(GPIO_BOUNDARY_ADDRESS + UART_ODR_OFFSET);
     if (current == 0) {

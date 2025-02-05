@@ -3,11 +3,11 @@
 #include "delay.h"
 #include "led.h"
 #include "uart.h"
-const uint8_t buffer[] = {"hello! "};
+const uint8_t buffer[] = {"efgh"};
 uint16_t bpos = 0;
 void sendSomething() {
     sendData1(buffer[bpos++]);
-    if (bpos >= sizeof(buffer)) {
+    if (bpos >= sizeof(buffer) - 1) {
         bpos = 0;
     }
 }
