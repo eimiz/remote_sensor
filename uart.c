@@ -32,13 +32,16 @@ void enableNVICint() {
 void enableInt() {
      uint32_t *pCR1 = (uint32_t *)UART_CR1;
     //enable uart interrupt
-   // *pCR1 |= (1 << TXEIE) | (1 << TCIE);
-    *pCR1 |= (1 << TCIE);
+//    *pCR1 |= (1 << TCIE);
+    //ready to read
+    *pCR1 |= (1 << RXNEIE);
 }
 
 void disableInt() {
      uint32_t *pCR1 = (uint32_t *)UART_CR1;
-    *pCR1 &= ~(1 << TCIE);
+//    *pCR1 &= ~(1 << TCIE);
+
+    *pCR1 &= ~(1 << RXNEIE);
 }
 
 void initUart() {

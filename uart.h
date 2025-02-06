@@ -43,6 +43,7 @@
 #define TXEIE 7
 
 #define TCIE 6
+#define RXNEIE 5
 
 #define UART_DR (UART_BOUNDARY + UART_DR_OFFSET)
 #define UART_BRR (UART_BOUNDARY + UART_BRR_OFFSET)
