@@ -29,6 +29,7 @@
 #define UART_CR1_OFFSET 0x0C
 #define UART_CR2_OFFSET 0x10
 #define UART_TE_ENABLE 3
+#define UART_RE_ENABLE 2
 #define UART_UE_ENABLE 13
 #define UART_PCLK_BIT 11
 
@@ -37,6 +38,11 @@
 
 //usart 2: 17, usart3: 18
 #define UART_EN_BIT 17
+
+//USART interrupts
+#define TXEIE 7
+
+#define TCIE 6
 
 #define UART_DR (UART_BOUNDARY + UART_DR_OFFSET)
 #define UART_BRR (UART_BOUNDARY + UART_BRR_OFFSET)
@@ -49,3 +55,6 @@
 
 void initUart();
 void sendData1(uint8_t data);
+void enableInt();
+void disableInt();
+void enableNVICint();

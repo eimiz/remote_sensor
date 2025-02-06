@@ -5,8 +5,8 @@
 #define TX_CNF_BITPOS  (TX_MODE_BITPOS + 2)
 
 static uint8_t current = 0;
-void initTxGpio() {
 
+void initTxGpio() {
     //enable A port:
     uint32_t *pAENR = (uint32_t*)(UART_RCC_BOUNDARY_ADDRESS + 0x18);
     *pAENR |= (1 << IOPAEN);
@@ -20,7 +20,26 @@ void initTxGpio() {
     *pGPIOL &= ~(0b11 << TX_CNF_BITPOS);
     *pGPIOL |= 0b10 << TX_CNF_BITPOS;
 }
+void enableNVICint() {
+    //usart2 irq is 38
+    uint32_t *pISER = (uint32_t *)(0xE000E100);
+    pISER[1] = 1 << 6;
 
+//    NVIC_EnableIRQ(38);
+
+}
+
+void enableInt() {
+     uint32_t *pCR1 = (uint32_t *)UART_CR1;
+    //enable uart interrupt
+   // *pCR1 |= (1 << TXEIE) | (1 << TCIE);
+    *pCR1 |= (1 << TCIE);
+}
+
+void disableInt() {
+     uint32_t *pCR1 = (uint32_t *)UART_CR1;
+    *pCR1 &= ~(1 << TCIE);
+}
 
 void initUart() {
      initTxGpio();
@@ -40,7 +59,9 @@ void initUart() {
     *pBRR = 1 | (50 << 4);
 
     //enable transmitter and receiver
-    *pCR1 |=   (1 << UART_TE_ENABLE);
+    *pCR1 |=   (1 << UART_TE_ENABLE) | (1 << UART_RE_ENABLE);
+
+
     //enable uart
     *pCR1 |=  (1 << UART_UE_ENABLE);
 }
