@@ -3,7 +3,7 @@
 #include "delay.h"
 #include "led.h"
 #include "uart.h"
-const uint8_t buffer[] = {"zxyu"};
+const uint8_t buffer[] = {"another"};
 uint16_t bpos = 0;
 
 void incBPos() {
@@ -32,7 +32,6 @@ void setup() {
 }
 
 void loop() {
-  led_on();
   delay(200);
   led_off();
   
