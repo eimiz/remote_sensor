@@ -59,7 +59,8 @@ void initUart() {
     uint32_t *pBRR = (uint32_t*)UART_BRR;
     //set boud rate 
     //12 higher bits main part, 4 lower bits - fraction
-    *pBRR = 1 | (50 << 4);
+    //115200 when pclk1 is 8MHz 4.34 = (8e6 / (16 * 115200))
+    *pBRR = 5 | (4 << 4);
 
     //enable transmitter and receiver
     *pCR1 |=   (1 << UART_TE_ENABLE) | (1 << UART_RE_ENABLE);

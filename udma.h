@@ -21,10 +21,10 @@
 
 //for DMA1 global clock
 #define RCC_AHB (RCC_BOUNDARY_ADDRESS + 0x14)
-#define AHB_DMA1_EN 1 << 0
+#define AHB_DMA1_EN (1 << 0)
 
 //dma interrupt status register
-#define DMA_ISR (DMA_BASE + 0x00)
+#define DMA_IFCR (DMA_BASE + 0x04)
 
 
 

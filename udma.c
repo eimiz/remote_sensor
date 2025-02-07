@@ -24,6 +24,10 @@ void receiveUsartDma(uint8_t *buffer, uint16_t size) {
     uint32_t *pCCR = (uint32_t *)DMA_CCR;
     *pCCR = DMA_MINC | DMA_CIRC | DMA_TCIE;
 
+    //Enable dma on Uart control reg
+    uint32_t *pUartCR3 = (uint32_t *)UART_CR3;
+    *pUartCR3 |= 1 << 6;
+
     //activate channel
     *pCCR |= DMA_EN;
 }
@@ -35,7 +39,8 @@ void disableDmaInt() {
 }
 
 void clearDmaIntFlag() {
-    uint32_t *pISR = (uint32_t *)(DMA_ISR);
+    uint32_t *pIFCR = (uint32_t *)(DMA_IFCR);
     uint32_t tmp = 1 << ((DMA_CHANNEL-1)*4 + 1);
-    *pISR &= ~tmp;
+    //flag is cleared by writing 1
+    *pIFCR |= tmp;
 }

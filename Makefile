@@ -3,14 +3,14 @@ OBJCOPY=arm-none-eabi-objcopy
 
 MACH=cortex-m3
 CFLAGS= -c -mcpu=$(MACH) -mthumb -std=gnu11 -Wall -g -O0
-LDFLAGS= -T stm32_ls.ld -nostdlib  -Wl,-Map=serial.map -specs=nosys.specs
+LDFLAGS= -T stm32_ls.ld -nostdlib  -Wl,-Map=serial.map -specs=nosys.specs 
 
 all: serial.bin
 
 serial.bin: serial.elf
 	$(OBJCOPY) -O binary $^ $@
 
-serial.elf: udma.o serial.o delay.o led.o stm32_startup.o uart.o
+serial.elf: udma.o serial.o delay.o led.o stm32_startup.o uart.o eutils.o
 	$(CC) $(LDFLAGS) -o $@ $^
 
 .PHONY: clean
