@@ -18,7 +18,7 @@ void incBpos() {
     if (bpos >= sizeof(buffer) - 1) {
         bpos = 0;
         delay(500);
-        memcpy(buffer + 9, rxbuffer, sizeof(rxbuffer));
+  //      memcpy(buffer + 9, rxbuffer, sizeof(rxbuffer));
     }
 }
 
@@ -35,6 +35,7 @@ void DMA1_Channel6_IRQHandler() {
     //disableDmaInt();
     dmaIntCounter++;
     eitoa(buffer + 3, dmaIntCounter);
+    memcpy(buffer + 9, rxbuffer, sizeof(rxbuffer));
     buffer[0]='r';
 }
 
