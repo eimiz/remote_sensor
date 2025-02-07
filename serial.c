@@ -4,8 +4,10 @@
 #include "delay.h"
 #include "led.h"
 #include "uart.h"
+#include "udma.h"
 
 uint8_t buffer[] = {"another "};
+uint8_t rxbuffer[3] = {0};
 uint16_t bpos = 0;
 volatile static bool receivedData = false;
 
@@ -18,8 +20,13 @@ void incBpos() {
 
 void USART2_IRQHandler() {
   //  incBPos();
-    disableInt();
+    disableUartInt();
     receivedData = true;
+}
+
+void DMA1_Channel6_IRQHandler() {
+    memcpy(buffer, rxbuffer, sizeof(rxbuffer));
+    clearDmaIntFlag();
 }
 
 
@@ -31,7 +38,7 @@ void sendSomething() {
 void setup() {
   led_enable();
   initUart();
-  enableNVICint();
+  enableUartNVICint();
 }
 
 void readRxData() {
@@ -47,10 +54,9 @@ void loop() {
   delay(400);
   led_on();
 
-  enableInt();
+  //enableUartInt();
   if (receivedData) {
       readRxData();
-
       receivedData = false;
   }
 

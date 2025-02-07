@@ -45,7 +45,8 @@ void DMA1_Channel2_IRQHandler   (void) __attribute__ ((weak, alias("Default_Hand
 void DMA1_Channel3_IRQHandler   (void) __attribute__ ((weak, alias("Default_Handler")));
 void DMA1_Channel4_IRQHandler   (void) __attribute__ ((weak, alias("Default_Handler")));
 void DMA1_Channel5_IRQHandler   (void) __attribute__ ((weak, alias("Default_Handler")));
-void DMA1_Channel6_IRQHandler   (void) __attribute__ ((weak, alias("Default_Handler")));
+//void DMA1_Channel6_IRQHandler   (void) __attribute__ ((weak, alias("Default_Handler")));
+void DMA1_Channel6_IRQHandler   (void);
 void DMA1_Channel7_IRQHandler   (void) __attribute__ ((weak, alias("Default_Handler")));
 void ADC_IRQHandler             (void) __attribute__ ((weak, alias("Default_Handler")));
 void USB_HP_CAN_TX_IRQHandler   (void) __attribute__ ((weak, alias("Default_Handler")));

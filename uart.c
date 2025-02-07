@@ -8,7 +8,7 @@ static uint8_t current = 0;
 
 void initTxGpio() {
     //enable A port:
-    uint32_t *pAENR = (uint32_t*)(UART_RCC_BOUNDARY_ADDRESS + 0x18);
+    uint32_t *pAENR = (uint32_t*)(RCC_BOUNDARY_ADDRESS + 0x18);
     *pAENR |= (1 << IOPAEN);
 
     uint32_t *pGPIOL = (uint32_t *)(GPIO_BOUNDARY_ADDRESS + UART_CRL_OFFSET);
@@ -20,7 +20,7 @@ void initTxGpio() {
     *pGPIOL &= ~(0b11 << TX_CNF_BITPOS);
     *pGPIOL |= 0b10 << TX_CNF_BITPOS;
 }
-void enableNVICint() {
+void enableUartNVICint() {
     //usart2 irq is 38
     uint32_t *pISER = (uint32_t *)(0xE000E100);
     pISER[1] = 1 << 6;
@@ -29,7 +29,7 @@ void enableNVICint() {
 
 }
 
-void enableInt() {
+void enableUartInt() {
      uint32_t *pCR1 = (uint32_t *)UART_CR1;
     //enable uart interrupt
 //    *pCR1 |= (1 << TCIE);
@@ -37,7 +37,7 @@ void enableInt() {
     *pCR1 |= (1 << RXNEIE);
 }
 
-void disableInt() {
+void disableUartInt() {
      uint32_t *pCR1 = (uint32_t *)UART_CR1;
 //    *pCR1 &= ~(1 << TCIE);
 

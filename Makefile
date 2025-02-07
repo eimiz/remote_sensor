@@ -10,7 +10,7 @@ all: serial.bin
 serial.bin: serial.elf
 	$(OBJCOPY) -O binary $^ $@
 
-serial.elf: serial.o delay.o led.o stm32_startup.o uart.o
+serial.elf: udma.o serial.o delay.o led.o stm32_startup.o uart.o
 	$(CC) $(LDFLAGS) -o $@ $^
 
 .PHONY: clean

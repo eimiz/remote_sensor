@@ -1,15 +1,16 @@
 #ifndef UART_H
 #define UART_H
+#include <stdint.h>
 //usart2
 //usart2: 0x40004400, usart3: 0x40004800
 #define UART_BOUNDARY 0x40004400
-#define UART_RCC_BOUNDARY_ADDRESS 0x40021000
+#define RCC_BOUNDARY_ADDRESS 0x40021000
 #define RCC_APB1RSTR_OFFSET 0x10
 
 //MCO clock output
 
 #define RCC_CFGR_OFFSET 0x04
-#define RCC_CFGR (UART_RCC_BOUNDARY_ADDRESS + RCC_CFGR_OFFSET)
+#define RCC_CFGR (RCC_BOUNDARY_ADDRESS + RCC_CFGR_OFFSET)
 
 //GPIOA TX2
 #define GPIO_BOUNDARY_ADDRESS 0x40010800
@@ -19,8 +20,8 @@
 
 //port clock enable regigster offset
 #define UART_APB1ENR_OFFSET  0x1C
-#define UART_APB1ENR (UART_RCC_BOUNDARY_ADDRESS + UART_APB1ENR_OFFSET)
-#define RCC_APB1RSTR (UART_RCC_BOUNDARY_ADDRESS + RCC_APB1RSTR_OFFSET)
+#define UART_APB1ENR (RCC_BOUNDARY_ADDRESS + UART_APB1ENR_OFFSET)
+#define RCC_APB1RSTR (RCC_BOUNDARY_ADDRESS + RCC_APB1RSTR_OFFSET)
 
 
 #define UART_SR_OFFSET 0x00
@@ -56,6 +57,7 @@
 
 void initUart();
 void sendData1(uint8_t data);
-void enableInt();
-void disableInt();
-void enableNVICint();
+void enableUartInt();
+void disableUartInt();
+void enableUartNVICint();
+void clearDmaIntFlag();
