@@ -8,7 +8,7 @@
 #include "udma.h"
 #include "eutils.h"
 
-uint8_t buffer[] = {"DI:st326           "};
+uint8_t buffer[] = {"DI:st329       "};
 uint8_t rxbuffer[3] = {"***"};
 uint16_t bpos = 0;
 volatile static bool receivedData = false;

@@ -1,4 +1,7 @@
 ENTRY(Reset_Handler)
+_estack = ORIGIN(SRAM) + LENGTH(SRAM); /* end of "RAM" Ram type memory */
+_Min_Heap_Size = 0x200; /* required amount of heap */
+_Min_Stack_Size = 0x400; /* required amount of stack */
 
 MEMORY
 {
@@ -10,7 +13,7 @@ SECTIONS
 {
   .text :
   {
-    *(.isr_vector)
+    KEEP (*(.isr_vector))
     *(.text)
     *(.text.*)
     *(.init)
@@ -46,4 +49,15 @@ SECTIONS
     end = .;
     __end__ = .;
   }> SRAM
+
+  ._user_heap_stack :
+  {
+    . = ALIGN(8);
+    PROVIDE ( end = . );
+    PROVIDE ( _end = . );
+    . = . + _Min_Heap_Size;
+    . = . + _Min_Stack_Size;
+    . = ALIGN(8);
+  } >SRAM
+  
 }
