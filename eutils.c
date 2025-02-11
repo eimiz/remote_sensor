@@ -1,4 +1,6 @@
+#include <string.h>
 #include "eutils.h"
+
 void eitoa(uint8_t *buffer, int32_t num) {
     int counter = 0;
     if (num < 0) {

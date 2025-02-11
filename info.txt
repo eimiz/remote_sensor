@@ -1,0 +1,12 @@
+using stcube ld file and following FLAGS, works with sprintf fine, however size is 4.4kb
+stcube.ld needs to be modified by renaming _sidata to _la_data
+compilation produces warnings:
+_lseek is not implemented and will always fail
+_write is not implemented and will always fail
+warning: serial.elf has a LOAD segment with RWX permissions
+
+
+
+CFLAGS= -c -mcpu=$(MACH) -mthumb -std=gnu11 -Wall -g -O0 --specs=nosys.specs
+
+LDFLAGS=-mcpu=cortex-m3 -T stcubo.ld  --specs=nosys.specs -Wl,-Map="serial.map" -static --specs=nano.specs  -mfloat-abi=soft -Wl,--gc-sections  -mthumb -Wl,--start-group -lc -lm -Wl,--end-group

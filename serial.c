@@ -8,11 +8,11 @@
 #include "udma.h"
 #include "eutils.h"
 
-uint8_t buffer[] = {"DI:initas        "};
+uint8_t buffer[] = {"DI:st326           "};
 uint8_t rxbuffer[3] = {"***"};
 uint16_t bpos = 0;
 volatile static bool receivedData = false;
-uint16_t dmaIntCounter = 0;
+int32_t dmaIntCounter = 0;
 void incBpos() {
     bpos++;
     if (bpos >= sizeof(buffer) - 1) {
@@ -27,18 +27,20 @@ void USART2_IRQHandler() {
     disableUartInt();
     receivedData = true;
 }
-
+char buftmp[20];
 void DMA1_Channel6_IRQHandler() {
 //    memcpy(buffer + 9, rxbuffer, sizeof(rxbuffer));
     led_on();
     clearDmaIntFlag();
     //disableDmaInt();
     dmaIntCounter++;
-    eitoa(buffer + 3, dmaIntCounter);
-    memcpy(buffer + 9, rxbuffer, sizeof(rxbuffer));
-    buffer[0]='r';
-}
+    //eitoa(buffer, dmaIntCounter);
 
+    memcpy(buffer + sizeof(buffer) - 7, rxbuffer, sizeof(rxbuffer));
+    sprintf((char *)buffer, "%li", dmaIntCounter);
+
+    //buffer[0]='r';
+}
 
 void sendSomething() {
     sendData1(buffer[bpos]);
