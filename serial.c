@@ -13,24 +13,17 @@ uint8_t rxbuffer[3] = {"***"};
 uint16_t bpos = 0;
 volatile static bool receivedData = false;
 int32_t dmaIntCounter = 0;
-void incBpos() {
-    bpos++;
-    if (bpos >= sizeof(buffer) - 1) {
-        bpos = 0;
-        delay(500);
-  //      memcpy(buffer + 9, rxbuffer, sizeof(rxbuffer));
-    }
-}
-
+int ledpos = 0;
+char buftmp[20];
 void USART2_IRQHandler() {
-  //  incBPos();
     disableUartInt();
     receivedData = true;
+    ledpos++;
+
 }
-char buftmp[20];
+
 void DMA1_Channel6_IRQHandler() {
 //    memcpy(buffer + 9, rxbuffer, sizeof(rxbuffer));
-    led_on();
     clearDmaIntFlag();
     //disableDmaInt();
     dmaIntCounter++;
@@ -43,8 +36,10 @@ void DMA1_Channel6_IRQHandler() {
 }
 
 void sendSomething() {
-    sendData1(buffer[bpos]);
-
+    for (int i = 0; i < sizeof(buffer) - 1; i++) {
+        sendData1(buffer[i]);
+        delay(5);
+    }
 }
 
 void setup() {
@@ -68,24 +63,29 @@ void loop() {
   delay(2);
   led_on();
 */
-delay(2);
-  //enableUartInt();
-  /*
-  if (receivedData) {
-      readRxData();
-      receivedData = false;
-  }
+delay(1000);
+/*led_on();
+delay(250);
+led_off();
   */
+  if (receivedData) {
+    readRxData();
+    enableUartInt();
+
+    receivedData = false;
+    if (ledpos %2 == 0) led_on();
+    else led_off();
+  }
+  
 
   sendSomething();
-  incBpos();
 }
 
 int main(void) {
   delay(10);
   setup();
   led_off();
-
+  enableUartInt();
   for(;;) {
     loop();
   }

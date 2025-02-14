@@ -11,7 +11,7 @@
 //actually gpioA for testing
 //#define GPIOC_BOUNDARY_ADDRESS 0x40010800
 
-#define GPIOC_CRH (GPIOC_BOUNDARY_ADDRESS + GPIO_CRH_OFFSET)
+#define GPIOC_CRH (GPIOC_BOUNDARY_ADDRESS)
 #define GPIOC_ODR (GPIOC_BOUNDARY_ADDRESS + GPIO_ODR_OFFSET)
 
 #define RCC_BOUNDARY_ADDRESS 0x40021000
@@ -26,7 +26,7 @@
 //for bluepill led is pc13
 //#define PC13  13
 //for blackboard pin is pb12
-#define PC13  12
+#define PC13  5
 
 void led_enable(void);
 void led_on(void);

@@ -1,14 +1,14 @@
 #include "led.h"
 
 // MODE13[1:0] is bits 21,20.
-#define PC13_MODE_BP ((PC13 - 8) * 4)
+#define PC13_MODE_BP ((PC13 % 8) * 4)
 
 // CNF13[1:0] is bits 23,22.
 #define PC13_CRH_BP (PC13_MODE_BP + 2)
 
 void led_enable(void) {
   uint32_t *pRCC_APB2ENR = (uint32_t *)RCC_APB2ENR;
-  uint32_t *pGPIOC_CRH = (uint32_t *)GPIOC_CRH;
+  uint32_t *pGPIOC_CRH = (uint32_t *)(GPIOC_CRH + (PC13 / 8) * 4);
 
   // RCC_APB2ENR: Set IOPC_EN 1: :I/O port C clock enabled
   *pRCC_APB2ENR |= ( 1 << IOPC_EN );
