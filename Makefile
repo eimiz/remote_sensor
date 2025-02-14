@@ -14,7 +14,7 @@ all: serial.bin
 serial.bin: serial.elf
 	$(OBJCOPY) -O binary $^ $@
 
-serial.elf: udma.o serial.o delay.o led.o stm32_startup.o uart.o eutils.o sysmem.o syscalls.o
+serial.elf: udma.o serial.o delay.o led.o stm32_startup.o uart.o eutils.o sysmem.o syscalls.o timer.o
 	$(CC) $(LDFLAGS) -o $@ $^
 
 .PHONY: clean

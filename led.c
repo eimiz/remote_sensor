@@ -23,12 +23,12 @@ void led_enable(void) {
   led_off();
 }
 
-void led_on(void) {
+void led_off(void) {
   uint32_t *pGPIOC_ODR = (uint32_t *)GPIOC_ODR;
   *pGPIOC_ODR  &= ~( 1 << PC13);
 }
 
-void led_off(void) {
+void led_on(void) {
   uint32_t *pGPIOC_ODR = (uint32_t *)GPIOC_ODR;
   *pGPIOC_ODR |= ( 1 << PC13);
 }
