@@ -1,36 +1,34 @@
 #include "led.h"
 
-// MODE13[1:0] is bits 21,20.
-#define PC13_MODE_BP ((PC13 % 8) * 4)
 
-// CNF13[1:0] is bits 23,22.
-#define PC13_CRH_BP (PC13_MODE_BP + 2)
+GPIO_Type GPIOB={3, (GPIO_TypeDef * )(0x40010C00)};
 
-void led_enable(void) {
+void led_enable(GPIO_Type *gpio, uint8_t pin) {
+  const uint8_t mode_bp = (pin % 8) * 4;
+  const uint8_t cnf_bp = mode_bp + 2;
+
   uint32_t *pRCC_APB2ENR = (uint32_t *)RCC_APB2ENR;
-  uint32_t *pGPIOC_CRH = (uint32_t *)(GPIOC_CRH + (PC13 / 8) * 4);
+  uint32_t *pGPIOC_CR = (uint32_t *)(&(gpio->gpioRegs->CRL) + (pin / 8) );
 
   // RCC_APB2ENR: Set IOPC_EN 1: :I/O port C clock enabled
-  *pRCC_APB2ENR |= ( 1 << IOPC_EN );
+  *pRCC_APB2ENR |= ( 1 << gpio->clockpin );
 
   // CRH: Set to 00: General purpose output push-pull
-  *pGPIOC_CRH &= ~( 0b11 << PC13_CRH_BP );  // clear bits
+  *pGPIOC_CR &= ~( 0b11 << cnf_bp );  // clear bits
 
   // MODE: Set to 01: Output mode, max speed 10 MHz.
-  *pGPIOC_CRH &= ~( 0b11 << PC13_MODE_BP );  // clear bits
-  *pGPIOC_CRH |= ( 0b01 << PC13_MODE_BP );   // set the new value
+  *pGPIOC_CR &= ~( 0b11 << mode_bp );  // clear bits
+  *pGPIOC_CR |= ( 0b01 << mode_bp );   // set the new value
 
-  led_off();
+  led_off(gpio, pin);
 }
 
-void led_off(void) {
-  uint32_t *pGPIOC_ODR = (uint32_t *)GPIOC_ODR;
-  *pGPIOC_ODR  &= ~( 1 << PC13);
+void led_off(GPIO_Type *gpio, uint8_t pin) {
+  gpio->gpioRegs->ODR &= ~( 1 << pin);
 }
 
-void led_on(void) {
-  uint32_t *pGPIOC_ODR = (uint32_t *)GPIOC_ODR;
-  *pGPIOC_ODR |= ( 1 << PC13);
+void led_on(GPIO_Type *gpio, uint8_t pin) {
+  gpio->gpioRegs->ODR |= ( 1 << pin);
 }
 
 

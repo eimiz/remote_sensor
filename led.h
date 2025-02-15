@@ -1,33 +1,29 @@
-#pragma once
+#ifndef LEG_H
+#define LED_H
 
 #include <stdint.h>
+#define __IO volatile
+typedef struct
+{
+  __IO uint32_t CRL;
+  __IO uint32_t CRH;
+  __IO uint32_t IDR;
+  __IO uint32_t ODR;
+  __IO uint32_t BSRR;
+  __IO uint32_t BRR;
+  __IO uint32_t LCKR;
+} GPIO_TypeDef;
 
-#define GPIO_CRH_OFFSET 0x4
-#define GPIO_ODR_OFFSET 0xC
-//GPIOC for bluepill
-//#define GPIOC_BOUNDARY_ADDRESS 0x40011000
-//actually GPIOB (for black board)
-#define GPIOC_BOUNDARY_ADDRESS   0x40010C00
-//actually gpioA for testing
-//#define GPIOC_BOUNDARY_ADDRESS 0x40010800
+typedef struct {
+    int clockpin;
+    GPIO_TypeDef *gpioRegs;
+} GPIO_Type;
 
-#define GPIOC_CRH (GPIOC_BOUNDARY_ADDRESS)
-#define GPIOC_ODR (GPIOC_BOUNDARY_ADDRESS + GPIO_ODR_OFFSET)
 
 #define RCC_BOUNDARY_ADDRESS 0x40021000
 #define RCC_APB2ENR (RCC_BOUNDARY_ADDRESS + 0x18)
-
-//for port c
-//#define IOPC_EN 4
-
-//for port b
-#define IOPC_EN 3
-
-//for bluepill led is pc13
-//#define PC13  13
-//for blackboard pin is pb12
-#define PC13  5
-
-void led_enable(void);
-void led_on(void);
-void led_off(void);
+extern GPIO_Type GPIOB;
+void led_enable(GPIO_Type *gpio, uint8_t pin);
+void led_off(GPIO_Type *gpio, uint8_t pin);
+void led_on(GPIO_Type *gpio, uint8_t pin);
+#endif
