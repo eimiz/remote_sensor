@@ -23,6 +23,7 @@ typedef struct {
 #define RCC_BOUNDARY_ADDRESS 0x40021000
 #define RCC_APB2ENR (RCC_BOUNDARY_ADDRESS + 0x18)
 extern GPIO_Type GPIOB;
+extern GPIO_Type GPIOA;
 void led_enable(GPIO_Type *gpio, uint8_t pin);
 void led_off(GPIO_Type *gpio, uint8_t pin);
 void led_on(GPIO_Type *gpio, uint8_t pin);

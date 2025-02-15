@@ -16,7 +16,7 @@ volatile static bool receivedData = false;
 int32_t dmaIntCounter = 0;
 int ledpos = 1;
 int ledpos2 = 1;
-const int blinkpin2 = 13;
+const int blinkpin2 = 6;
 char buftmp[20];
 uint32_t events;
 void measureTempr();
@@ -57,8 +57,8 @@ void ledBlink() {
 }
 
 void ledBlink2() {
-    if (ledpos2++ %2 == 0) led_on(&GPIOB, blinkpin2);
-    else led_off(&GPIOB, blinkpin2);
+    if (ledpos2++ %2 == 0) led_on(&GPIOA, blinkpin2);
+    else led_off(&GPIOA, blinkpin2);
     
 }
 
@@ -108,7 +108,7 @@ void sendSomething(const uint8_t *lbuf, int len) {
 
 void setup() {
   led_enable(&GPIOB, 5);
-  led_enable(&GPIOB, blinkpin2);
+  led_enable(&GPIOA, blinkpin2);
   initUart();
   enableUartNVICint();
   initDma();
@@ -149,7 +149,7 @@ int main(void) {
   delay(10);
   setup();
   led_off(&GPIOB, 5);
-  led_off(&GPIOB, blinkpin2);
+  led_off(&GPIOA, blinkpin2);
   enableUartInt();
   timerEnableInt();
   timerStart();

@@ -2,6 +2,7 @@
 
 
 GPIO_Type GPIOB={3, (GPIO_TypeDef * )(0x40010C00)};
+GPIO_Type GPIOA={2, (GPIO_TypeDef * )(0x40010800)};
 
 void led_enable(GPIO_Type *gpio, uint8_t pin) {
   const uint8_t mode_bp = (pin % 8) * 4;
