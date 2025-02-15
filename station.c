@@ -19,6 +19,7 @@ char buftmp[20];
 uint32_t events;
 void measureTempr();
 void measureVoltage();
+void sendSomething(const uint8_t *lbuf, int len);
 
 typedef enum {TEMPR_EVENT = 0, MOTION_EVENT, CHECKCHARGE_EVENT} TEvent;
 typedef void (*TaskFunc)(void);
@@ -35,10 +36,11 @@ Task tasks[] = {{TEMPR_EVENT, measureTempr, 2000, 0},
 
 
 void measureTempr() {
-
+    sendSomething("tmpr  ", 6);
 }
 
 void measureVoltage() {
+    sendSomething("volt  ", 6);
 
 }
 
@@ -49,11 +51,17 @@ void processEvents() {
             t->lastTick = ticks;
             events |= 1 << t->event;
         }
+
+        //if tick counter overflows. Should happen every ~50 days
+        if (ticks < t->lastTick) {
+            t->lastTick = 0;
+        }
     }
 }
 
 void TIM2_IRQHandler() {
-//    processEvents();
+    ticks++;
+    processEvents();
     if (ledpos++ %2 == 0) led_on();
     else led_off();
     timerClearInt();
@@ -61,7 +69,7 @@ void TIM2_IRQHandler() {
 }
 
 void USART2_IRQHandler() {
-    ticks++;
+
     receivedData = true;
     disableUartInt();
 }
@@ -75,10 +83,10 @@ void DMA1_Channel6_IRQHandler() {
     sprintf((char *)buffer, "[%li] ", dmaIntCounter);
 }
 
-void sendSomething() {
+void sendSomething(const uint8_t *lbuf, int len) {
     uint32_t *pSR = (uint32_t*)UART_SR;
-    for (int i = 0; i < sizeof(buffer) - 1; i++) {
-        sendData1(buffer[i]);
+    for (int i = 0; i < len; i++) {
+        sendData1(lbuf[i]);
         while (!(*pSR &(1 << 7))) { (void)0;};
     }
 }
@@ -88,7 +96,7 @@ void setup() {
   initUart();
   enableUartNVICint();
   initDma();
-  timerInit(200, 4000);
+  timerInit(2, 4000);
   receiveUsartDma(rxbuffer, sizeof(rxbuffer));
 }
 
@@ -97,16 +105,28 @@ void readRxData() {
     const uint32_t val = *pDR;
 }
 
+
+void checkEvents() {
+    for (int i = 0; i < ALEN(tasks); i++) {
+        Task *t = &tasks[i];
+        if (events & (1 << t->event)) {
+            t->func();
+            events &= ~(1 << t->event);
+        }
+    }
+}
+
+
 void loop() {
-    delay(1000);
+    delay(1);
     if (receivedData) {
         readRxData();
         enableUartInt();
         receivedData = false;
     }
 
-  
-  sendSomething();
+  checkEvents();
+//  sendSomething(buffer, sizeof(buffer) -1);
 }
 
 int main(void) {
