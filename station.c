@@ -16,13 +16,52 @@ volatile static bool receivedData = false;
 int32_t dmaIntCounter = 0;
 int ledpos = 1;
 char buftmp[20];
+uint32_t events;
+void measureTempr();
+void measureVoltage();
+
+typedef enum {TEMPR_EVENT = 0, MOTION_EVENT, CHECKCHARGE_EVENT} TEvent;
+typedef void (*TaskFunc)(void);
+typedef struct {
+    TEvent event;
+    TaskFunc func;
+    uint32_t period;
+    uint32_t lastTick;
+} Task;
+static uint32_t ticks = 0;
+
+Task tasks[] = {{TEMPR_EVENT, measureTempr, 2000, 0}, 
+    {MOTION_EVENT, measureVoltage, 1300, 0}};
+
+
+void measureTempr() {
+
+}
+
+void measureVoltage() {
+
+}
+
+void processEvents() {
+    for (int i = 0; i < ALEN(tasks); i++) {
+        Task *t = &tasks[i];
+        if (ticks - t->lastTick >= t->period) {
+            t->lastTick = ticks;
+            events |= 1 << t->event;
+        }
+    }
+}
+
 void TIM2_IRQHandler() {
+//    processEvents();
     if (ledpos++ %2 == 0) led_on();
     else led_off();
     timerClearInt();
+
 }
 
 void USART2_IRQHandler() {
+    ticks++;
     receivedData = true;
     disableUartInt();
 }
@@ -37,9 +76,10 @@ void DMA1_Channel6_IRQHandler() {
 }
 
 void sendSomething() {
+    uint32_t *pSR = (uint32_t*)UART_SR;
     for (int i = 0; i < sizeof(buffer) - 1; i++) {
         sendData1(buffer[i]);
-        delay(1);
+        while (!(*pSR &(1 << 7))) { (void)0;};
     }
 }
 
@@ -48,7 +88,7 @@ void setup() {
   initUart();
   enableUartNVICint();
   initDma();
-  timerInit(500, 10000);
+  timerInit(200, 4000);
   receiveUsartDma(rxbuffer, sizeof(rxbuffer));
 }
 
@@ -58,12 +98,12 @@ void readRxData() {
 }
 
 void loop() {
-delay(1000);
-  if (receivedData) {
-    readRxData();
-    enableUartInt();
-    receivedData = false;
-  }
+    delay(1000);
+    if (receivedData) {
+        readRxData();
+        enableUartInt();
+        receivedData = false;
+    }
 
   
   sendSomething();
