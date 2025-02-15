@@ -1,9 +1,9 @@
 #include "timer.h"
-void timer_clearInt() {
+void timerClearInt() {
     uint32_t *pSR = (uint32_t *)TIMER_SR;
     *pSR &= ~(1 << TIMER_UIF);
 }
-void timer_init(uint16_t presc, uint16_t period) {
+void timerInit(uint16_t presc, uint16_t period) {
     //enable TIM2 peripheral clock
     uint32_t *pAPB1 = (uint32_t *)UART_APB1ENR;
     *pAPB1 |= (1 << 0);
@@ -25,7 +25,7 @@ void timer_init(uint16_t presc, uint16_t period) {
     uint32_t *pEGR = (uint32_t *)TIMER_EGR;
     *pEGR |=  (1 << TIMER_UG);
 
-    timer_clearInt();
+    timerClearInt();
 
 
     //enable NVIC interrupt
@@ -34,29 +34,29 @@ void timer_init(uint16_t presc, uint16_t period) {
     pISER[0] |= 1 << 28;
 }
 
-void timer_start() {
+void timerStart() {
     uint32_t *pCR1 = (uint32_t *)TIMER_CR1;
     *pCR1 |= 1 << TIMER_CEN;
 }
 
-void timer_enableInt() {    
+void timerEnableInt() {
     uint32_t *pTIMDIER = (uint32_t *)TIMER_TIM_DIER;
     //enable timer interrupt
     *pTIMDIER |= 1 << TIMER_UIE;
 }
 
-void timer_disableInt() {    
+void timerDisableInt() {
     uint32_t *pTIMDIER = (uint32_t *)TIMER_TIM_DIER;
     //enable timer interrupt
     *pTIMDIER &= ~(1 << TIMER_UIE);
 }
 
-uint16_t timer_getCounter() {
+uint16_t timerGetCounter() {
     uint32_t *pCnt = (uint32_t *)TIMER_CNT;
     return *pCnt;
 }
 
-uint32_t timer_getSR() {
+uint32_t timerGetSR() {
     uint32_t *pSR = (uint32_t *)TIMER_SR;
     return *pSR;
 }

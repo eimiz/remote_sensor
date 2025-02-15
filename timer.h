@@ -17,12 +17,12 @@
 #define TIMER_UG 0
 #define TIMER_TG 6
 #define TIMER_UIF 0
-void timer_init(uint16_t presc, uint16_t period);
-void timer_start();
-void timer_enableInt();
-uint16_t timer_getCounter();
-void timer_clearInt();
-void timer_disableInt();
-uint32_t timer_getSR();
+void timerInit(uint16_t presc, uint16_t period);
+void timerStart();
+void timerEnableInt();
+uint16_t timerGetCounter();
+void timerClearInt();
+void timerDisableInt();
+uint32_t timerGetSR();
 #endif
 

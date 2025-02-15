@@ -19,7 +19,7 @@ char buftmp[20];
 void TIM2_IRQHandler() {
     if (ledpos++ %2 == 0) led_on();
     else led_off();
-    timer_clearInt();
+    timerClearInt();
 }
 
 void USART2_IRQHandler() {
@@ -48,7 +48,7 @@ void setup() {
   initUart();
   enableUartNVICint();
   initDma();
-  timer_init(500, 10000);
+  timerInit(500, 10000);
   receiveUsartDma(rxbuffer, sizeof(rxbuffer));
 }
 
@@ -74,8 +74,8 @@ int main(void) {
   setup();
   led_off();
   enableUartInt();
-  timer_enableInt();
-  timer_start();
+  timerEnableInt();
+  timerStart();
 
   for(;;) {
     loop();
