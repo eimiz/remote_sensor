@@ -103,3 +103,13 @@ void lcdWriteText(TLcd *lcd, const uint8_t *data, int len) {
         //lcdWriteData(lcd, data, len, 1);
 }
 
+
+void lcdWriteRam(TLcd *lcd, const uint8_t addr, const uint8_t *data) {
+    lcdWriteByte(lcd, 0b01000000 | (addr & 0x1f), 0);
+    for (int i = 0; i < 8; i++) {
+        lcdWriteByte(lcd, data[i], 1);
+    }
+    //set start address
+    lcdWriteData(lcd, (uint8_t[]){0b10000000}, 1, 0);
+    delaymu(20);
+}

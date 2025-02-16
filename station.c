@@ -161,13 +161,37 @@ void writeDegrees() {
         lcdWriteText(&lcd, (uint8_t[]){(uint8_t)'C'}, 1);
 }
 
+void storeChars() {
+    const uint8_t she[] = {
+        0b00001010,
+        0b00000100,
+        0b00001111,
+        0b00010000,
+        0b00001100,
+        0b00000010,
+        0b00000001,
+        0b00011110
+    };
+
+    lcdWriteRam(&lcd, 0, she);
+}
+
 void readRxData() {
     uint32_t *pDR = (uint32_t *)UART_DR;
     const uint32_t val = *pDR;
-    if (val == '|') {
-        events |= 1 << LCD_EVENT;
-    } else {
-        lcdWriteText(&lcd, (uint8_t[]){val}, 1);
+    switch(val) {
+        case 8:
+            events |= 1 << LCD_EVENT;
+            break;
+        case 's':
+            storeChars();
+            sendSomething("Stored ", 7);
+            break;
+        case 'S':
+            lcdWriteText(&lcd, (uint8_t[]){0}, 1);
+            break;
+        default:
+            lcdWriteText(&lcd, (uint8_t[]){val}, 1);
     }
 }
 
