@@ -1,6 +1,8 @@
 #pragma once
 #include <stdint.h>
 typedef struct {
+    int pos; //position of cursor
+    int line; //current line
     int rs;
     int clock;
     int d4;

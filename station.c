@@ -53,8 +53,8 @@ void lcdProcess() {
     sendSomething("lcd ", 4);
     lcdInit(&lcd, 6, 7, 15, 14, 13, 9);
     delay(10);
-    const char *txt = "Labas kaip einasi?";
-    lcdWriteText(&lcd, txt, strlen(txt));
+//    const char *txt = "Labas kaip einasi?";
+//    lcdWriteText(&lcd, txt, strlen(txt));
 
 }
 
@@ -114,6 +114,11 @@ void DMA1_Channel6_IRQHandler() {
 
     memcpy(buffer + sizeof(buffer) - 7, rxbuffer, sizeof(rxbuffer));
     sprintf((char *)buffer, "[%li] ", dmaIntCounter);
+    const uint8_t mydata[] = {0b10000000};
+//    lcdWriteData(&lcd, mydata, sizeof(mydata), 0);
+    delaymu(40);
+    lcdWriteText(&lcd, rxbuffer, sizeof(rxbuffer));
+
 }
 
 void sendSomething(const uint8_t *lbuf, int len) {
@@ -138,7 +143,7 @@ void setup() {
 void readRxData() {
     uint32_t *pDR = (uint32_t *)UART_DR;
     const uint32_t val = *pDR;
-    if (val == 'l') {
+    if (val == '|') {
         events |= 1 << LCD_EVENT;
     }
 }
