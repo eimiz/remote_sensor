@@ -8,6 +8,7 @@
 #include "udma.h"
 #include "eutils.h"
 #include "timer.h"
+#include "lcd.h"
 
 uint8_t buffer[200] = {"Pradzia! "};
 uint8_t rxbuffer[3] = {"***"};
@@ -19,6 +20,7 @@ int ledpos2 = 1;
 int ledpos3 = 1;
 const int blinkpin2 = 6;
 const int blinkpin3 = 12;
+TLcd lcd;
 char buftmp[20];
 uint32_t events;
 void measureTempr();
@@ -26,9 +28,10 @@ void measureVoltage();
 void ledBlink();
 void ledBlink2();
 void ledBlink3();
+void lcdProcess();
 void sendSomething(const uint8_t *lbuf, int len);
 
-typedef enum {TEMPR_EVENT = 0, MOTION_EVENT, CHECKCHARGE_EVENT, BLINK_EVENT, BLINK_EVENT2, BLINK_EVENT3} TEvent;
+typedef enum {TEMPR_EVENT = 0, MOTION_EVENT, CHECKCHARGE_EVENT, BLINK_EVENT, BLINK2_EVENT, BLINK3_EVENT, LCD_EVENT} TEvent;
 typedef void (*TaskFunc)(void);
 typedef struct {
    const TEvent event;
@@ -41,10 +44,19 @@ static uint32_t ticks = 0;
 Task tasks[] = {{TEMPR_EVENT, measureTempr, 2000, 0}, 
     {MOTION_EVENT, measureVoltage, 1300, 0},
     {BLINK_EVENT, ledBlink, 300, 0},
-    {BLINK_EVENT2, ledBlink2, 213, 0},
-    {BLINK_EVENT3, ledBlink3, 134, 0},
+    {BLINK2_EVENT, ledBlink2, 154, 0},
+    {BLINK3_EVENT, ledBlink3, 120, 0},
+    {LCD_EVENT, lcdProcess, 0, 0},
     };
 
+void lcdProcess() {
+    sendSomething("lcd ", 4);
+    lcdInit(&lcd, 6, 7, 15, 14, 13, 9);
+    delay(10);
+    const char *txt = "Labas kaip einasi?";
+    lcdWriteText(&lcd, txt, strlen(txt));
+
+}
 
 void measureTempr() {
     sendSomething("tmpr  ", 6);
@@ -57,7 +69,6 @@ void measureVoltage() {
 void ledBlink() {
     if (ledpos++ %2 == 0) led_on(&GPIOB, 5);
     else led_off(&GPIOB, 5);
-    
 }
 
 void ledBlink2() {
@@ -92,7 +103,6 @@ void TIM2_IRQHandler() {
 }
 
 void USART2_IRQHandler() {
-
     receivedData = true;
     disableUartInt();
 }
@@ -128,6 +138,9 @@ void setup() {
 void readRxData() {
     uint32_t *pDR = (uint32_t *)UART_DR;
     const uint32_t val = *pDR;
+    if (val == 'l') {
+        events |= 1 << LCD_EVENT;
+    }
 }
 
 

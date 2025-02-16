@@ -38,6 +38,9 @@ void lcdInit(TLcd *lcd, int rs, int clock, int d4, int d5, int d6, int d7) {
     //entry mode
     lcdWriteByte(lcd, 0b00000110, 0);
     delay(4);
+    //on
+    lcdWriteByte(lcd, 0b00001100, 0);
+    delaymu(20);
 }
 
 void lcdClearDataPins(TLcd *lcd) {

@@ -5,16 +5,16 @@ OBJCOPY=arm-none-eabi-objcopy
 MACH=cortex-m3
 CFLAGS= -c -mcpu=$(MACH) -mthumb -std=gnu11 -Wall -g -O0 -ffunction-sections -fdata-sections 
 
-LDFLAGS= -mcpu=cortex-m3 -T stm32_ls.ld  -Wl,-Map=serial.map  -static --specs=nano.specs -Wl,--gc-sections -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-#LDFLAGS=-mcpu=cortex-m3 -T stcubo.ld  --specs=nosys.specs -Wl,-Map="serial.map" -static --specs=nano.specs  -mfloat-abi=soft -Wl,--gc-sections  -mthumb -Wl,--start-group -lc -lm -Wl,--end-group 
+LDFLAGS= -mcpu=cortex-m3 -T stm32_ls.ld  -Wl,-Map=station.map  -static --specs=nano.specs -Wl,--gc-sections -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+#LDFLAGS=-mcpu=cortex-m3 -T stcubo.ld  --specs=nosys.specs -Wl,-Map="station.map" -static --specs=nano.specs  -mfloat-abi=soft -Wl,--gc-sections  -mthumb -Wl,--start-group -lc -lm -Wl,--end-group 
 
 
-all: serial.bin
+all: station.bin
 
-serial.bin: serial.elf
+station.bin: station.elf
 	$(OBJCOPY) -O binary $^ $@
 
-serial.elf: udma.o station.o delay.o led.o stm32_startup.o uart.o eutils.o sysmem.o syscalls.o timer.o lcd.o
+station.elf: udma.o station.o delay.o led.o stm32_startup.o uart.o eutils.o sysmem.o syscalls.o timer.o lcd.o
 	$(CC) $(LDFLAGS) -o $@ $^
 
 .PHONY: clean
@@ -23,7 +23,7 @@ clean:
 
 .PHONY: flash
 flash: all
-	st-flash write serial.bin 0x08000000
+	st-flash write station.bin 0x08000000
 
 .PHONY: reset
 reset:
@@ -34,5 +34,5 @@ debughost:
 	st-util
 
 .PHONY: gdb
-gdb: serial.elf
-	arm-none-eabi-gdb serial.elf
+gdb: station.elf
+	arm-none-eabi-gdb station.elf
