@@ -144,13 +144,13 @@ void setup() {
 }
 
 void dumpAscii() {
-        for (uint8_t i = 0; i < 16; i++) {
+        for (uint8_t i = 0; i < 32; i++) {
             lcdWriteText(&lcd, (uint8_t[]){charPos + i}, 1);
         }
 
-        charPos += 16;
+        charPos += 32;
         char buf[13]={0};
-        sprintf(buf, "[%i - %i] ", charPos - 16, charPos);
+        sprintf(buf, "[%i - %i] ", charPos - 32, charPos);
         sendSomething(buf, sizeof(buf));
 }
 
@@ -173,12 +173,34 @@ void storeChars() {
         0b00011110
     };
 
+    const uint8_t zhe[] = {
+        0b00001010,
+        0b00000100,
+        0b00011111,
+        0b00000001,
+        0b00000110,
+        0b00001000,
+        0b00010000,
+        0b00011111
+    };
+
     lcdWriteRam(&lcd, 0, she);
+    delay(1);
+    lcdWriteRam(&lcd, 1, zhe);
 }
 
 void readRxData() {
     uint32_t *pDR = (uint32_t *)UART_DR;
     const uint32_t val = *pDR;
+    /*
+    if (val == 8) {
+        events |= 1 << LCD_EVENT;
+    } else {
+        dumpAscii();
+    }
+    return;
+    */
+
     switch(val) {
         case 8:
             events |= 1 << LCD_EVENT;
@@ -189,6 +211,9 @@ void readRxData() {
             break;
         case 'S':
             lcdWriteText(&lcd, (uint8_t[]){0}, 1);
+            break;
+        case 'Z':
+            lcdWriteText(&lcd, (uint8_t[]){1}, 1);
             break;
         default:
             lcdWriteText(&lcd, (uint8_t[]){val}, 1);

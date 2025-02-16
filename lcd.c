@@ -105,7 +105,7 @@ void lcdWriteText(TLcd *lcd, const uint8_t *data, int len) {
 
 
 void lcdWriteRam(TLcd *lcd, const uint8_t addr, const uint8_t *data) {
-    lcdWriteByte(lcd, 0b01000000 | (addr & 0x1f), 0);
+    lcdWriteByte(lcd, 0b01000000 | (addr & 0x7) << 3, 0);
     for (int i = 0; i < 8; i++) {
         lcdWriteByte(lcd, data[i], 1);
     }
