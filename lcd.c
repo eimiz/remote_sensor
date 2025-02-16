@@ -76,13 +76,13 @@ void lcdWriteNibble(TLcd *lcd, uint8_t data, int rs) {
     delaymu(1);
 }
 
-void lcdWriteData(TLcd *lcd, uint8_t *data, int len, int rs) {
+void lcdWriteData(TLcd *lcd, const uint8_t *data, int len, int rs) {
     for (int i = 0; i < len; i++) {
         lcdWriteByte(lcd, data[i], rs);
     }
 }
 
-void lcdWriteText(TLcd *lcd, uint8_t *data, int len) {
+void lcdWriteText(TLcd *lcd, const uint8_t *data, int len) {
     //reset address to 0
     while (len > 0) {
         int toWrite = MIN(16 - lcd->pos, len);

@@ -18,6 +18,7 @@ int32_t dmaIntCounter = 0;
 int ledpos = 1;
 int ledpos2 = 1;
 int ledpos3 = 1;
+uint8_t charPos = 0;
 const int blinkpin2 = 6;
 const int blinkpin3 = 12;
 TLcd lcd;
@@ -42,7 +43,7 @@ typedef struct {
 static uint32_t ticks = 0;
 
 Task tasks[] = {{TEMPR_EVENT, measureTempr, 2000, 0}, 
-    {MOTION_EVENT, measureVoltage, 1300, 0},
+    {MOTION_EVENT, measureVoltage, 2300, 0},
     {BLINK_EVENT, ledBlink, 300, 0},
     {BLINK2_EVENT, ledBlink2, 154, 0},
     {BLINK3_EVENT, ledBlink3, 120, 0},
@@ -55,6 +56,8 @@ void lcdProcess() {
     delay(10);
 //    const char *txt = "Labas kaip einasi?";
 //    lcdWriteText(&lcd, txt, strlen(txt));
+    
+//    lcdWriteText(&lcd,(uint8_t[]){ 0b10010000, 0b00101101, ' ', 'e'}, 4);
 
 }
 
@@ -117,7 +120,7 @@ void DMA1_Channel6_IRQHandler() {
     const uint8_t mydata[] = {0b10000000};
 //    lcdWriteData(&lcd, mydata, sizeof(mydata), 0);
     delaymu(40);
-    lcdWriteText(&lcd, rxbuffer, sizeof(rxbuffer));
+//    lcdWriteText(&lcd, rxbuffer, sizeof(rxbuffer));
 
 }
 
@@ -140,11 +143,31 @@ void setup() {
   receiveUsartDma(rxbuffer, sizeof(rxbuffer));
 }
 
+void dumpAscii() {
+        for (uint8_t i = 0; i < 16; i++) {
+            lcdWriteText(&lcd, (uint8_t[]){charPos + i}, 1);
+        }
+
+        charPos += 16;
+        char buf[13]={0};
+        sprintf(buf, "[%i - %i] ", charPos - 16, charPos);
+        sendSomething(buf, sizeof(buf));
+}
+
+void writeDegrees() {
+        const uint8_t buf[] = "Dabar 9";
+        lcdWriteText(&lcd, buf, sizeof(buf)-1);
+        lcdWriteText(&lcd, (uint8_t[]){(uint8_t)223}, 1);
+        lcdWriteText(&lcd, (uint8_t[]){(uint8_t)'C'}, 1);
+}
+
 void readRxData() {
     uint32_t *pDR = (uint32_t *)UART_DR;
     const uint32_t val = *pDR;
     if (val == '|') {
         events |= 1 << LCD_EVENT;
+    } else {
+        lcdWriteText(&lcd, (uint8_t[]){val}, 1);
     }
 }
 
