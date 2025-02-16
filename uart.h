@@ -1,5 +1,4 @@
-#ifndef UART_H
-#define UART_H
+#pragma once
 #include <stdint.h>
 //usart2
 //usart2: 0x40004400, usart3: 0x40004800
@@ -53,9 +52,6 @@
 #define UART_CR1 (UART_BOUNDARY + UART_CR1_OFFSET)
 #define UART_CR2 (UART_BOUNDARY + UART_CR2_OFFSET)
 #define UART_CR3 (UART_BOUNDARY + UART_CR3_OFFSET)
-
-#endif
-
 
 void initUart();
 void sendData1(uint8_t data);

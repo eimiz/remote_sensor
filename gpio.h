@@ -1,6 +1,4 @@
-#ifndef LEG_H
-#define LED_H
-
+#pragma once
 #include <stdint.h>
 #define __IO volatile
 typedef enum {GPIO_IN, GPIO_OUT} GpioDirection;
@@ -29,4 +27,3 @@ void gpioEnable(GPIO_Type *gpio, uint8_t pin, GpioDirection dir);
 void gpioEnableClock(GPIO_Type *gpio);
 void gpioOff(GPIO_Type *gpio, uint8_t pin);
 void gpioOn(GPIO_Type *gpio, uint8_t pin);
-#endif

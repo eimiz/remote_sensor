@@ -1,5 +1,4 @@
-#ifndef UDMA_H
-#define UDMA_H
+#pragma once
 #include "uart.h"
 #define DMA_BASE 0x40020000
 #define DMA_CHANNEL 6
@@ -31,6 +30,3 @@
 void initDma();
 void receiveUsartDma(uint8_t *buffer, uint16_t size);
 void disableDmaInt();
-
-#endif
-

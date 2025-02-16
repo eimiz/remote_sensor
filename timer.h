@@ -1,6 +1,5 @@
-#ifndef TIMER_H
+#pragma once
 #include "uart.h"
-#define TIMER_H
 #define TIMER_BASE 0x40000000
 #define TIMER_CR1 (TIMER_BASE)
 #define TIMER_CR2 (TIMER_BASE + 0x04)
@@ -24,5 +23,3 @@ uint16_t timerGetCounter();
 void timerClearInt();
 void timerDisableInt();
 uint32_t timerGetSR();
-#endif
-
