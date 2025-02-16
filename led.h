@@ -16,7 +16,7 @@ typedef struct
 
 typedef struct {
     int clockpin;
-    GPIO_TypeDef *gpioRegs;
+    GPIO_TypeDef * const gpioRegs;
 } GPIO_Type;
 
 

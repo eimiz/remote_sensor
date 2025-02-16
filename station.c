@@ -16,21 +16,24 @@ volatile static bool receivedData = false;
 int32_t dmaIntCounter = 0;
 int ledpos = 1;
 int ledpos2 = 1;
+int ledpos3 = 1;
 const int blinkpin2 = 6;
+const int blinkpin3 = 12;
 char buftmp[20];
 uint32_t events;
 void measureTempr();
 void measureVoltage();
 void ledBlink();
 void ledBlink2();
+void ledBlink3();
 void sendSomething(const uint8_t *lbuf, int len);
 
-typedef enum {TEMPR_EVENT = 0, MOTION_EVENT, CHECKCHARGE_EVENT, BLINK_EVENT, BLINK_EVENT2} TEvent;
+typedef enum {TEMPR_EVENT = 0, MOTION_EVENT, CHECKCHARGE_EVENT, BLINK_EVENT, BLINK_EVENT2, BLINK_EVENT3} TEvent;
 typedef void (*TaskFunc)(void);
 typedef struct {
-    TEvent event;
-    TaskFunc func;
-    uint32_t period;
+   const TEvent event;
+   const TaskFunc func;
+   const uint32_t period;
     uint32_t lastTick;
 } Task;
 static uint32_t ticks = 0;
@@ -38,7 +41,8 @@ static uint32_t ticks = 0;
 Task tasks[] = {{TEMPR_EVENT, measureTempr, 2000, 0}, 
     {MOTION_EVENT, measureVoltage, 1300, 0},
     {BLINK_EVENT, ledBlink, 300, 0},
-    {BLINK_EVENT2, ledBlink2, 230, 0},
+    {BLINK_EVENT2, ledBlink2, 213, 0},
+    {BLINK_EVENT3, ledBlink3, 134, 0},
     };
 
 
@@ -59,13 +63,17 @@ void ledBlink() {
 void ledBlink2() {
     if (ledpos2++ %2 == 0) led_on(&GPIOA, blinkpin2);
     else led_off(&GPIOA, blinkpin2);
-    
+}
+
+void ledBlink3() {
+    if (ledpos3++ %2 == 0) led_on(&GPIOB, blinkpin3);
+    else led_off(&GPIOB, blinkpin3);
 }
 
 void processEvents() {
     for (int i = 0; i < ALEN(tasks); i++) {
         Task *t = &tasks[i];
-        if (ticks - t->lastTick >= t->period) {
+        if ((t->period > 0) && (ticks - t->lastTick >= t->period)) {
             t->lastTick = ticks;
             events |= 1 << t->event;
         }
@@ -109,6 +117,7 @@ void sendSomething(const uint8_t *lbuf, int len) {
 void setup() {
   led_enable(&GPIOB, 5);
   led_enable(&GPIOA, blinkpin2);
+  led_enable(&GPIOB, blinkpin3);
   initUart();
   enableUartNVICint();
   initDma();
@@ -148,8 +157,6 @@ void loop() {
 int main(void) {
   delay(10);
   setup();
-  led_off(&GPIOB, 5);
-  led_off(&GPIOA, blinkpin2);
   enableUartInt();
   timerEnableInt();
   timerStart();
