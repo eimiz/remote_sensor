@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #define __IO volatile
+typedef enum {GPIO_IN, GPIO_OUT} GpioDirection;
 typedef struct
 {
   __IO uint32_t CRL;
@@ -24,7 +25,8 @@ typedef struct {
 #define RCC_APB2ENR (RCC_BOUNDARY_ADDRESS + 0x18)
 extern GPIO_Type GPIOB;
 extern GPIO_Type GPIOA;
-void led_enable(GPIO_Type *gpio, uint8_t pin);
+void led_enable(GPIO_Type *gpio, uint8_t pin, GpioDirection dir);
+void led_enableClock(GPIO_Type *gpio);
 void led_off(GPIO_Type *gpio, uint8_t pin);
 void led_on(GPIO_Type *gpio, uint8_t pin);
 #endif

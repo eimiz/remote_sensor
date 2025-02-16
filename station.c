@@ -133,9 +133,11 @@ void sendSomething(const uint8_t *lbuf, int len) {
 }
 
 void setup() {
-  led_enable(&GPIOB, 5);
-  led_enable(&GPIOA, blinkpin2);
-  led_enable(&GPIOB, blinkpin3);
+  led_enableClock(&GPIOA);
+  led_enableClock(&GPIOB);
+  led_enable(&GPIOB, 5, GPIO_OUT);
+  led_enable(&GPIOA, blinkpin2, GPIO_OUT);
+  led_enable(&GPIOB, blinkpin3, GPIO_OUT);
   initUart();
   enableUartNVICint();
   initDma();

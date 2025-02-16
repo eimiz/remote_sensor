@@ -13,12 +13,12 @@ void lcdInit(TLcd *lcd, int rs, int clock, int d4, int d5, int d6, int d7) {
     lcd->d5 = 1 << d5;
     lcd->d6 = 1 << d6;
     lcd->d7 = 1 << d7;
-    led_enable(&GPIOB, rs);
-    led_enable(&GPIOB, clock);
-    led_enable(&GPIOB, d4);
-    led_enable(&GPIOB, d5);
-    led_enable(&GPIOB, d6);
-    led_enable(&GPIOB, d7);
+    led_enable(&GPIOB, rs, GPIO_OUT);
+    led_enable(&GPIOB, clock, GPIO_OUT);
+    led_enable(&GPIOB, d4, GPIO_OUT);
+    led_enable(&GPIOB, d5, GPIO_OUT);
+    led_enable(&GPIOB, d6, GPIO_OUT);
+    led_enable(&GPIOB, d7, GPIO_OUT);
     delay(1);
     lcdWriteNibble(lcd, 0b11, 0);
     delay(5);
