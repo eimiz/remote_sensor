@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "delay.h"
-#include "led.h"
+#include "gpio.h"
 #include "uart.h"
 #include "udma.h"
 #include "eutils.h"
@@ -70,18 +70,18 @@ void measureVoltage() {
 }
 
 void ledBlink() {
-    if (ledpos++ %2 == 0) led_on(&GPIOB, 5);
-    else led_off(&GPIOB, 5);
+    if (ledpos++ %2 == 0) gpioOn(&GPIOB, 5);
+    else gpioOff(&GPIOB, 5);
 }
 
 void ledBlink2() {
-    if (ledpos2++ %2 == 0) led_on(&GPIOA, blinkpin2);
-    else led_off(&GPIOA, blinkpin2);
+    if (ledpos2++ %2 == 0) gpioOn(&GPIOA, blinkpin2);
+    else gpioOff(&GPIOA, blinkpin2);
 }
 
 void ledBlink3() {
-    if (ledpos3++ %2 == 0) led_on(&GPIOB, blinkpin3);
-    else led_off(&GPIOB, blinkpin3);
+    if (ledpos3++ %2 == 0) gpioOn(&GPIOB, blinkpin3);
+    else gpioOff(&GPIOB, blinkpin3);
 }
 
 void processEvents() {
@@ -133,11 +133,11 @@ void sendSomething(const uint8_t *lbuf, int len) {
 }
 
 void setup() {
-  led_enableClock(&GPIOA);
-  led_enableClock(&GPIOB);
-  led_enable(&GPIOB, 5, GPIO_OUT);
-  led_enable(&GPIOA, blinkpin2, GPIO_OUT);
-  led_enable(&GPIOB, blinkpin3, GPIO_OUT);
+  gpioEnableClock(&GPIOA);
+  gpioEnableClock(&GPIOB);
+  gpioEnable(&GPIOB, 5, GPIO_OUT);
+  gpioEnable(&GPIOA, blinkpin2, GPIO_OUT);
+  gpioEnable(&GPIOB, blinkpin3, GPIO_OUT);
   initUart();
   enableUartNVICint();
   initDma();
