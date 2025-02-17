@@ -27,13 +27,15 @@ void gpioEnable(GPIO_Type *gpio, uint8_t pin, GpioDirection dir) {
   uint32_t *pGPIOC_CR = (uint32_t *)(&(gpio->gpioRegs->CRL) + (pin / 8) );
 
   // CRH: Set to 00: General purpose output push-pull
-  *pGPIOC_CR &= ~( 0b11 << cnf_bp );  // clear bits
-  *pGPIOC_CR |= ( cnf << cnf_bp );  // clear bits
+  uint32_t out = *pGPIOC_CR;
+  out &= ~( 0b11 << cnf_bp );  // clear bits
+  out |= ( cnf << cnf_bp );  // clear bits
 
 
   // MODE: Set to 01: Output mode, max speed 10 MHz.
-  *pGPIOC_CR &= ~( 0b11 << mode_bp );  // clear bits
-  *pGPIOC_CR |= ( mode << mode_bp );   // set the new value
+  out &= ~( 0b11 << mode_bp );  // clear bits
+  out |= ( mode << mode_bp );   // set the new value
+  *pGPIOC_CR = out;
 
   gpioOff(gpio, pin);
 }
