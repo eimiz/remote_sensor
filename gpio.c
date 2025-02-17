@@ -36,8 +36,6 @@ void gpioEnable(GPIO_Type *gpio, uint8_t pin, GpioDirection dir) {
   out &= ~( 0b11 << mode_bp );  // clear bits
   out |= ( mode << mode_bp );   // set the new value
   *pGPIOC_CR = out;
-
-  gpioOff(gpio, pin);
 }
 
 void gpioOff(GPIO_Type *gpio, uint8_t pin) {

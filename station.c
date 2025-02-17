@@ -9,7 +9,10 @@
 #include "eutils.h"
 #include "timer.h"
 #include "lcd.h"
-
+#include "wire1.h"
+#define WIRE_PIN 0
+#define BLINKPIN2 6
+#define BLINKPIN3 12
 uint8_t buffer[200] = {"Pradzia! "};
 uint8_t rxbuffer[3] = {"***"};
 uint16_t bpos = 0;
@@ -19,9 +22,9 @@ int ledpos = 1;
 int ledpos2 = 1;
 int ledpos3 = 1;
 uint8_t charPos = 0;
-const int blinkpin2 = 6;
-const int blinkpin3 = 12;
+
 TLcd lcd;
+TWire1 wire1;
 char buftmp[20];
 uint32_t events;
 void measureTempr();
@@ -30,7 +33,7 @@ void ledBlink();
 void ledBlink2();
 void ledBlink3();
 void lcdProcess();
-void sendSomething(const uint8_t *lbuf, int len);
+void sendSomething(const char *lbuf, int len);
 
 typedef enum {TEMPR_EVENT = 0, MOTION_EVENT, CHECKCHARGE_EVENT, BLINK_EVENT, BLINK2_EVENT, BLINK3_EVENT, LCD_EVENT} TEvent;
 typedef void (*TaskFunc)(void);
@@ -45,7 +48,7 @@ static uint32_t ticks = 0;
 Task tasks[] = {{TEMPR_EVENT, measureTempr, 2000, 0}, 
     {MOTION_EVENT, measureVoltage, 2300, 0},
     {BLINK_EVENT, ledBlink, 300, 0},
-    {BLINK2_EVENT, ledBlink2, 154, 0},
+    {BLINK2_EVENT, ledBlink2, 184, 0},
     {BLINK3_EVENT, ledBlink3, 120, 0},
     {LCD_EVENT, lcdProcess, 0, 0},
     };
@@ -75,13 +78,13 @@ void ledBlink() {
 }
 
 void ledBlink2() {
-    if (ledpos2++ %2 == 0) gpioOn(&GPIOA, blinkpin2);
-    else gpioOff(&GPIOA, blinkpin2);
+    if (ledpos2++ %2 == 0) gpioOn(&GPIOA, BLINKPIN2);
+    else gpioOff(&GPIOA, BLINKPIN2);
 }
 
 void ledBlink3() {
-    if (ledpos3++ %2 == 0) gpioOn(&GPIOB, blinkpin3);
-    else gpioOff(&GPIOB, blinkpin3);
+    if (ledpos3++ %2 == 0) gpioOn(&GPIOB, BLINKPIN3);
+    else gpioOff(&GPIOB, BLINKPIN3);
 }
 
 void processEvents() {
@@ -124,7 +127,7 @@ void DMA1_Channel6_IRQHandler() {
 
 }
 
-void sendSomething(const uint8_t *lbuf, int len) {
+void sendSomething(const char *lbuf, int len) {
     uint32_t *pSR = (uint32_t*)UART_SR;
     for (int i = 0; i < len; i++) {
         sendData1(lbuf[i]);
@@ -136,11 +139,12 @@ void setup() {
   gpioEnableClock(&GPIOA);
   gpioEnableClock(&GPIOB);
   gpioEnable(&GPIOB, 5, GPIO_OUT);
-  gpioEnable(&GPIOA, blinkpin2, GPIO_OUT);
-  gpioEnable(&GPIOB, blinkpin3, GPIO_OUT);
+  gpioEnable(&GPIOA, BLINKPIN2, GPIO_OUT);
+  gpioEnable(&GPIOB, BLINKPIN3, GPIO_OUT);
   initUart();
   enableUartNVICint();
   initDma();
+  wire1Init(&wire1, &GPIOA, WIRE_PIN);
   timerInit(2, 4000);
   receiveUsartDma(rxbuffer, sizeof(rxbuffer));
 }
@@ -191,6 +195,14 @@ void storeChars() {
     lcdWriteRam(&lcd, 1, zhe);
 }
 
+void checkTempPresent() {
+    if (wire1DevicePresent(&wire1)) {
+        sendSomething("present ", 8); 
+    } else {
+        sendSomething("Not pres ", 9); 
+    }
+}
+
 void readRxData() {
     uint32_t *pDR = (uint32_t *)UART_DR;
     const uint32_t val = *pDR;
@@ -216,6 +228,9 @@ void readRxData() {
             break;
         case 'Z':
             lcdWriteText(&lcd, (uint8_t[]){1}, 1);
+            break;
+        case 'p':
+            checkTempPresent();
             break;
         default:
             lcdWriteText(&lcd, (uint8_t[]){val}, 1);

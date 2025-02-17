@@ -14,7 +14,7 @@ all: station.bin
 station.bin: station.elf
 	$(OBJCOPY) -O binary $^ $@
 
-station.elf: udma.o station.o delay.o gpio.o stm32_startup.o uart.o eutils.o sysmem.o syscalls.o timer.o lcd.o
+station.elf: udma.o station.o delay.o gpio.o stm32_startup.o uart.o eutils.o sysmem.o syscalls.o timer.o lcd.o wire1.o
 	$(CC) $(LDFLAGS) -o $@ $^
 
 .PHONY: clean
