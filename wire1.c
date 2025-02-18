@@ -84,8 +84,8 @@ int wire1ReadTemp(TWire1 *wire1) {
     sendByte(wire1, READ_SCRATCH);
     uint8_t tempLsb = readByte(wire1);
     uint8_t tempMsb = readByte(wire1);
-    wire1->tfrac = tempLsb & 0xf;
-    wire1->tmain = (tempMsb << 4) | (tempLsb >> 4);
+    wire1->tfrac = tempLsb;
+    wire1->tmain = tempMsb;
     wire1Reset(wire1);
     return WIRE1_OK;
 }
