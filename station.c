@@ -166,7 +166,7 @@ void setup() {
   enableUartNVICint();
   initDma();
   wire1Init(&wire1, &GPIOA, WIRE_PIN);
-  timerInit(2, 12000);
+  timerInit(4, 9000);
   receiveUsartDma(rxbuffer, sizeof(rxbuffer));
 }
 

@@ -1,7 +1,7 @@
 #include "delay.h"
 
-#define DELAY_COUNT_1MS      4000U
-#define DELAY_COUNT_1US      3U
+#define DELAY_COUNT_1MS      6000U
+#define DELAY_COUNT_1US      5U
 
 // Command: a simple do-nothing delay for approximately `ms` milliseconds
 void delay(uint32_t ms) {

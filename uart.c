@@ -61,8 +61,9 @@ void initUart() {
     //12 higher bits main part, 4 lower bits - fraction
     //115200 when pclk1 is 8MHz 4.34 = (8e6 / (16 * 115200))
     //115200 when pclk1 is 24MHz 13.02 = (24e6 / (16 * 115200))
+    //115200 when pclk1 is 36MHz 19.53125 = (36e6 / (16 * 115200))
     //*pBRR = 5 | (4 << 4);
-    *pBRR = 0 | (13 << 4);
+    *pBRR = 9 | (19 << 4);
 
     //enable transmitter and receiver
     *pCR1 |=   (1 << UART_TE_ENABLE) | (1 << UART_RE_ENABLE);
