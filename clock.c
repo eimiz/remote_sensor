@@ -1,5 +1,6 @@
-#include "clock.h"
 #include <stdint.h>
+#include "clock.h"
+#include "uart.h"
 #define RCC_BASE 0x40021000
 #define __IO volatile
 typedef struct
@@ -48,7 +49,7 @@ typedef struct
 
 void decreaseFlashLatency(uint32_t FLatency) {
   /* Increasing the number of wait states because of higher CPU frequency */
-  if (FLatency > __HAL_FLASH_GET_LATENCY())
+  if (FLatency < __HAL_FLASH_GET_LATENCY())
   {
     /* Program the new number of wait states to the LATENCY bits in the FLASH_ACR register */
     __HAL_FLASH_SET_LATENCY(FLatency);
@@ -63,7 +64,7 @@ void decreaseFlashLatency(uint32_t FLatency) {
 
 void increaseFlashLatency(uint32_t FLatency) {
   /* Decreasing the number of wait states because of lower CPU frequency */
-  if (FLatency < __HAL_FLASH_GET_LATENCY())
+  if (FLatency > __HAL_FLASH_GET_LATENCY())
   {
     /* Program the new number of wait states to the LATENCY bits in the FLASH_ACR register */
     __HAL_FLASH_SET_LATENCY(FLatency);
@@ -76,14 +77,33 @@ void increaseFlashLatency(uint32_t FLatency) {
 }
 
 }
-void setApbPresc() {
-    //set APB1 prescaler to 2 (36MHz)
-    RCC->CFGR &= ~(7 << 8);   //set to 16 (111)
-    RCC->CFGR |= 0b100 << 8;   //set to 16 (111)
-    RCC->CFGR &= ~(7 << 11);
+
+void modifyReg(uint32_t *p, uint32_t msk, uint32_t val) {
+	uint32_t reg = *p;
+    reg &= ~(msk);
+    reg |= val;
+    *p = reg;
 }
 
+void setApbPrescSafe() {
+    modifyReg(&RCC->CFGR, (7 << 8) | (7 << 11), 7 << 8 | 7 << 11);
+}
+
+void setApbPresc() {
+    modifyReg(&RCC->CFGR, (7 << 8) | (7 << 11), (0b100 << 8) | (0 << 11));
+}
+
+
+void enablePwrEnr() {
+    uint32_t *pAPB1 = (uint32_t *)UART_APB1ENR;
+    *pAPB1 |= (1 << 28);
+}
+
+
+
 void clockConfig() {
+    //enable pwr enr
+    enablePwrEnr();
     //hse on
     RCC->CR |= 1 << 16;
     /* Wait till HSE is ready */
@@ -92,8 +112,7 @@ void clockConfig() {
 	//pass
 
     //set pll source and divider
-    RCC->CFGR &= ~((1<< 16) | (0xf << 18));
-    RCC->CFGR |= (1<< 16) | (0b100 << 18); //PLL multiplier
+    modifyReg(&RCC->CFGR, (1<< 16) | (0xf << 18), (1<< 16) | (0b111 << 18) );
 
 
     //pll on
@@ -123,11 +142,12 @@ void clockConfig() {
 
 
 
-    setApbPresc();
+    setApbPrescSafe();
 	//apb1 prescaler screwed
 
     //Switch system clock to PLL
-    RCC->CFGR |= 0b10;
+    modifyReg(&RCC->CFGR, 0b11,  0b10);
+
     
     //wait for switch
 

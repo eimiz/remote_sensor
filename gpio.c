@@ -1,8 +1,10 @@
 #include "gpio.h"
 
 
-GPIO_Type GPIOB={3, (GPIO_TypeDef * )(0x40010C00)};
+
 GPIO_Type GPIOA={2, (GPIO_TypeDef * )(0x40010800)};
+GPIO_Type GPIOB={3, (GPIO_TypeDef * )(0x40010C00)};
+GPIO_Type GPIOD={5, (GPIO_TypeDef * )(0x40010C00)};
 
 void gpioEnableClock(GPIO_Type *gpio) {
   uint32_t *pRCC_APB2ENR = (uint32_t *)RCC_APB2ENR;

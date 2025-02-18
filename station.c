@@ -158,6 +158,7 @@ void sendSomething(const char *lbuf, int len) {
 void setup() {
   gpioEnableClock(&GPIOA);
   gpioEnableClock(&GPIOB);
+  gpioEnableClock(&GPIOD);
   gpioEnable(&GPIOB, 5, GPIO_OUT);
   gpioEnable(&GPIOA, BLINKPIN2, GPIO_OUT);
   gpioEnable(&GPIOB, BLINKPIN3, GPIO_OUT);
@@ -263,11 +264,12 @@ void readTemp() {
         sendSomething("Read ok ", 8);
         //sprintf(buf, "t=%f", wire1.tempr);
         formatTempr(buft, wire1.tmain, wire1.tfrac);
-        sprintf(buf, "Temp=%s", buft);
+        sprintf(buf, "Tmp=%s", buft);
         lcdHome(&lcd);
         lcdWriteText(&lcd, buf, strlen(buf));
         lcdWriteText(&lcd, (uint8_t[]){2, 'C'}, 2);
         sendSomething(buf, sizeof(buf));
+        sendSomething(" ", 1);
     } else {
         sendSomething("Read er ", 8); 
     }
@@ -338,7 +340,7 @@ void checkEvents() {
     }
 }
 
-
+static bool regsSent = false;
 void loop() {
     delay(1);
     if (receivedData) {
@@ -348,7 +350,28 @@ void loop() {
     }
 
   checkEvents();
-//  sendSomething(buffer, sizeof(buffer) -1);
+  /*
+  if (!regsSent) {
+       sendSomething("\r\n", 2);
+      sendSomething(buffer, sizeof(buffer) -1);
+      regsSent = true;
+      timerDisableInt();
+      sendSomething("\r\n", 2);
+  }
+  */
+}
+void fillBufferWithRegs() {
+    int regdelta = 0;
+        for (int i = 0; i < 9; i++) {
+                //rcc
+               //uint32_t *p = (uint32_t*)( 0x40021000+ regdelta);
+                //gpioD
+                //uint32_t *p = (uint32_t*)( 0x40011400+ regdelta);
+                //AFIO
+                uint32_t *p = (uint32_t*)( 0x40010000 + regdelta);
+                sprintf((char *)buffer + (i + 1) * 15, "%x:%lx,", regdelta, *p);
+                regdelta+=4;
+        }
 }
 
 int main(void) {
@@ -358,7 +381,7 @@ int main(void) {
   enableUartInt();
   timerEnableInt();
   timerStart();
-
+//  fillBufferWithRegs();
   for(;;) {
     loop();
   }

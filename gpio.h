@@ -21,8 +21,9 @@ typedef struct {
 
 #define RCC_BOUNDARY_ADDRESS 0x40021000
 #define RCC_APB2ENR (RCC_BOUNDARY_ADDRESS + 0x18)
-extern GPIO_Type GPIOB;
 extern GPIO_Type GPIOA;
+extern GPIO_Type GPIOB;
+extern GPIO_Type GPIOD;
 void gpioEnable(GPIO_Type *gpio, uint8_t pin, GpioDirection dir);
 void gpioEnableClock(GPIO_Type *gpio);
 void gpioOff(GPIO_Type *gpio, uint8_t pin);
