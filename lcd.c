@@ -49,6 +49,12 @@ void lcdInit(TLcd *lcd, int rs, int clock, int d4, int d5, int d6, int d7) {
     delaymu(20);
 }
 
+void lcdHome(TLcd *lcd) {
+    lcdWriteData(lcd, (uint8_t[]){0b10000000}, 1, 0);
+    lcd->line = 0;
+    lcd->pos = 0;
+}
+
 void lcdClearDataPins(TLcd *lcd) {
     uint32_t out = ~(lcd->d4 | lcd->d5 | lcd->d6 | lcd->d7 | lcd->clock|lcd->rs);
     GPIOB.gpioRegs->ODR &= out;
@@ -91,7 +97,7 @@ void lcdWriteText(TLcd *lcd, const uint8_t *data, int len) {
         lcd->pos += toWrite;
         len -= toWrite;
 
-          if (lcd->pos == 16) {
+          if (lcd->pos >= 16) {
             lcd->line = (lcd->line + 1) % 2;
             //second row
             lcdWriteData(lcd, (uint8_t[]){0b10000000 | (lcd->line << 6)}, 1, 0);

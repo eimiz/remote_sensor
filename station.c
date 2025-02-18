@@ -213,13 +213,27 @@ void measureTemp() {
     }
 }
 
+void formatTempr(char *buf, uint8_t h, uint8_t l) {
+    int lbig = l * 625;
+    int lrem = lbig % 100;
+    int lrnd = lbig / 100;
+    if (lrem >= 50) {
+        lrnd += 1;
+    }
+
+    sprintf(buf, "%i.%02i", h, lrnd);
+}
+
 void readTemp() {
     char buf[30] = {0};
+    char buft[20] = {0};
     if (wire1ReadTemp(&wire1) == WIRE1_OK) {
         sendSomething("Read ok ", 8);
         //sprintf(buf, "t=%f", wire1.tempr);
-
-        sprintf(buf, "t=%i ", (int)wire1.tempr);
+        formatTempr(buft, wire1.tmain, wire1.tfrac);
+        sprintf(buf, "Temp is = %s ", buft);
+//        lcdHome(&lcd);
+        lcdWriteText(&lcd, "abc", 3);
         sendSomething(buf, sizeof(buf));
     } else {
         sendSomething("Read er ", 8); 
