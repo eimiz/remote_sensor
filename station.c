@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include "clock.h"
 #include "delay.h"
 #include "gpio.h"
 #include "uart.h"
@@ -10,6 +11,7 @@
 #include "timer.h"
 #include "lcd.h"
 #include "wire1.h"
+
 #define WIRE_PIN 0
 #define BLINKPIN2 6
 #define BLINKPIN3 12
@@ -45,11 +47,11 @@ typedef struct {
 } Task;
 static uint32_t ticks = 0;
 
-Task tasks[] = {{TEMPR_EVENT, measureTempr, 2000, 0}, 
-    {MOTION_EVENT, measureVoltage, 2300, 0},
-    {BLINK_EVENT, ledBlink, 300, 0},
-    {BLINK2_EVENT, ledBlink2, 184, 0},
-    {BLINK3_EVENT, ledBlink3, 120, 0},
+Task tasks[] = {{TEMPR_EVENT, measureTempr, 3000, 0}, 
+    {MOTION_EVENT, measureVoltage, 4300, 0},
+    {BLINK_EVENT, ledBlink, 500, 0},
+    {BLINK2_EVENT, ledBlink2, 284, 0},
+    {BLINK3_EVENT, ledBlink3, 320, 0},
     {LCD_EVENT, lcdProcess, 0, 0},
     };
 
@@ -145,7 +147,7 @@ void setup() {
   enableUartNVICint();
   initDma();
   wire1Init(&wire1, &GPIOA, WIRE_PIN);
-  timerInit(2, 4000);
+  timerInit(2, 12000);
   receiveUsartDma(rxbuffer, sizeof(rxbuffer));
 }
 
@@ -196,10 +198,41 @@ void storeChars() {
 }
 
 void checkTempPresent() {
-    if (wire1DevicePresent(&wire1)) {
+    if (wire1Reset(&wire1)) {
         sendSomething("present ", 8); 
     } else {
         sendSomething("Not pres ", 9); 
+    }
+}
+
+void measureTemp() {
+    if (wire1MeasureTemp(&wire1) == WIRE1_OK) {
+        sendSomething("Meas ok ", 8); 
+    } else {
+        sendSomething("Meas er ", 8); 
+    }
+}
+
+void readTemp() {
+    char buf[30] = {0};
+    if (wire1ReadTemp(&wire1) == WIRE1_OK) {
+        sendSomething("Read ok ", 8);
+        //sprintf(buf, "t=%f", wire1.tempr);
+
+        sprintf(buf, "t=%i ", (int)wire1.tempr);
+        sendSomething(buf, sizeof(buf));
+    } else {
+        sendSomething("Read er ", 8); 
+    }
+
+    
+}
+
+void configTemp() {
+    if (wire1Config(&wire1) == WIRE1_OK) {
+        sendSomething("Conf ok ", 8); 
+    } else {
+        sendSomething("Conf er ", 8);
     }
 }
 
@@ -214,7 +247,7 @@ void readRxData() {
     }
     return;
     */
-
+   timerDisableInt();
     switch(val) {
         case 8:
             events |= 1 << LCD_EVENT;
@@ -232,9 +265,19 @@ void readRxData() {
         case 'p':
             checkTempPresent();
             break;
+        case 'm':
+            measureTemp();
+            break;
+        case 'r':
+            readTemp();
+            break;
+        case 'c':
+            configTemp();
+            break;
         default:
             lcdWriteText(&lcd, (uint8_t[]){val}, 1);
     }
+    timerEnableInt();
 }
 
 
@@ -262,6 +305,7 @@ void loop() {
 }
 
 int main(void) {
+  clockConfig();
   delay(10);
   setup();
   enableUartInt();

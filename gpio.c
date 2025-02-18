@@ -9,7 +9,6 @@ void gpioEnableClock(GPIO_Type *gpio) {
   // RCC_APB2ENR: Set IOPC_EN 1: :I/O port C clock enabled
   *pRCC_APB2ENR |= ( 1 << gpio->clockpin );
 }
-
 void gpioEnable(GPIO_Type *gpio, uint8_t pin, GpioDirection dir) {
   uint8_t cnf;
   uint8_t mode;
