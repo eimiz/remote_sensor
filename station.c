@@ -36,6 +36,7 @@ void ledBlink2();
 void ledBlink3();
 void lcdProcess();
 void sendSomething(const char *lbuf, int len);
+void storeChars();
 void readTemp();
 
 typedef enum {TEMPR_EVENT = 0, MOTION_EVENT, CHECKCHARGE_EVENT, BLINK_EVENT, BLINK2_EVENT, BLINK3_EVENT, LCD_EVENT} TEvent;
@@ -73,18 +74,22 @@ void dallasProc() {
         sendSomething("lcdin ", 6);
         lcdProcess();
         tempstatus = 1;
-    } else  if (tempstatus == 1) {
+    } else if (tempstatus == 1) {
+        sendSomething("stchr ", 6);
+        storeChars();
+        tempstatus = 2;
+    } else  if (tempstatus == 2) {
         sendSomething("tmcfg ", 6);
         wire1Config(&wire1);
-        tempstatus = 2;
-    } else if (tempstatus == 2) {
-        sendSomething("measr ", 6);
-        wire1MeasureTemp(&wire1);
         tempstatus = 3;
     } else if (tempstatus == 3) {
+        sendSomething("measr ", 6);
+        wire1MeasureTemp(&wire1);
+        tempstatus = 4;
+    } else if (tempstatus == 4) {
         sendSomething("readt ", 6);
         readTemp();
-        tempstatus = 2;
+        tempstatus = 3;
     }
 }
 
@@ -248,13 +253,13 @@ void measureTemp() {
 
 void formatTempr(char *buf, uint8_t h, uint8_t l) {
     int lbig = l * 625;
-    int lrem = lbig % 100;
-    int lrnd = lbig / 100;
-    if (lrem >= 50) {
+    int lrem = lbig % 1000;
+    int lrnd = lbig / 1000;
+    if (lrem >= 500) {
         lrnd += 1;
     }
 
-    sprintf(buf, "%i.%02i", h, lrnd);
+    sprintf(buf, "%i.%01i", h, lrnd);
 }
 
 void readTemp() {
