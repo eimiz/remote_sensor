@@ -49,8 +49,8 @@ typedef struct {
 static uint32_t ticks = 0;
 int tempstatus = 0;
 
-Task tasks[] = {{TEMPR_EVENT, dallasProc, 3000, 0}, 
-    {MOTION_EVENT, measureVoltage, 4300, 0},
+Task tasks[] = {{TEMPR_EVENT, dallasProc, 1500, 0},
+    {MOTION_EVENT, measureVoltage, 6300, 0},
     {BLINK_EVENT, ledBlink, 500, 0},
     {BLINK2_EVENT, ledBlink2, 284, 0},
     {BLINK3_EVENT, ledBlink3, 320, 0},
@@ -70,21 +70,22 @@ void lcdProcess() {
 
 void dallasProc() {
     if (tempstatus == 0) {
+        sendSomething("lcdin ", 6);
+        lcdProcess();
+        tempstatus = 1;
+    } else  if (tempstatus == 1) {
         sendSomething("tmcfg ", 6);
         wire1Config(&wire1);
-        tempstatus =1;
-
-    } else if (tempstatus == 1) {
-        sendSomething("measr ", 6);
-        wire1MeasureTemp(&wire1);
         tempstatus = 2;
     } else if (tempstatus == 2) {
+        sendSomething("measr ", 6);
+        wire1MeasureTemp(&wire1);
+        tempstatus = 3;
+    } else if (tempstatus == 3) {
         sendSomething("readt ", 6);
         readTemp();
-        tempstatus = 1;
+        tempstatus = 2;
     }
-
-
 }
 
 void measureVoltage() {
