@@ -29,13 +29,14 @@ TLcd lcd;
 TWire1 wire1;
 char buftmp[20];
 uint32_t events;
-void measureTempr();
+void dallasProc();
 void measureVoltage();
 void ledBlink();
 void ledBlink2();
 void ledBlink3();
 void lcdProcess();
 void sendSomething(const char *lbuf, int len);
+void readTemp();
 
 typedef enum {TEMPR_EVENT = 0, MOTION_EVENT, CHECKCHARGE_EVENT, BLINK_EVENT, BLINK2_EVENT, BLINK3_EVENT, LCD_EVENT} TEvent;
 typedef void (*TaskFunc)(void);
@@ -46,8 +47,9 @@ typedef struct {
     uint32_t lastTick;
 } Task;
 static uint32_t ticks = 0;
+int tempstatus = 0;
 
-Task tasks[] = {{TEMPR_EVENT, measureTempr, 3000, 0}, 
+Task tasks[] = {{TEMPR_EVENT, dallasProc, 3000, 0}, 
     {MOTION_EVENT, measureVoltage, 4300, 0},
     {BLINK_EVENT, ledBlink, 500, 0},
     {BLINK2_EVENT, ledBlink2, 284, 0},
@@ -66,8 +68,23 @@ void lcdProcess() {
 
 }
 
-void measureTempr() {
-    sendSomething("tmpr  ", 6);
+void dallasProc() {
+    if (tempstatus == 0) {
+        sendSomething("tmcfg ", 6);
+        wire1Config(&wire1);
+        tempstatus =1;
+
+    } else if (tempstatus == 1) {
+        sendSomething("measr ", 6);
+        wire1MeasureTemp(&wire1);
+        tempstatus = 2;
+    } else if (tempstatus == 2) {
+        sendSomething("readt ", 6);
+        readTemp();
+        tempstatus = 1;
+    }
+
+
 }
 
 void measureVoltage() {
@@ -192,9 +209,23 @@ void storeChars() {
         0b00011111
     };
 
+    const uint8_t deg[] = {
+        0b00000111,
+        0b00000101,
+        0b00000111,
+        0b00000000,
+        0b00000000,
+        0b00000000,
+        0b00000000,
+        0b00000000
+    };
+
+
     lcdWriteRam(&lcd, 0, she);
     delay(1);
     lcdWriteRam(&lcd, 1, zhe);
+    delay(1);
+    lcdWriteRam(&lcd, 2, deg);
 }
 
 void checkTempPresent() {
@@ -225,15 +256,16 @@ void formatTempr(char *buf, uint8_t h, uint8_t l) {
 }
 
 void readTemp() {
-    char buf[30] = {0};
+    char buf[40] = {0};
     char buft[20] = {0};
     if (wire1ReadTemp(&wire1) == WIRE1_OK) {
         sendSomething("Read ok ", 8);
         //sprintf(buf, "t=%f", wire1.tempr);
         formatTempr(buft, wire1.tmain, wire1.tfrac);
-        sprintf(buf, "Temp is = %s ", buft);
-//        lcdHome(&lcd);
-        lcdWriteText(&lcd, "abc", 3);
+        sprintf(buf, "Temp=%s", buft);
+        lcdHome(&lcd);
+        lcdWriteText(&lcd, buf, strlen(buf));
+        lcdWriteText(&lcd, (uint8_t[]){2, 'C'}, 2);
         sendSomething(buf, sizeof(buf));
     } else {
         sendSomething("Read er ", 8); 

@@ -75,11 +75,11 @@ void lcdWriteNibble(TLcd *lcd, uint8_t data, int rs) {
     if (data & 8) out |= lcd->d7;
     GPIOB.gpioRegs->ODR |= out;
     //hold data min 5ns
-    delaymu(3);
+    delaymu(10);
     //latch data
     GPIOB.gpioRegs->ODR &= ~(lcd->clock);
     //wait a bit
-    delaymu(1);
+    delaymu(10);
 }
 
 void lcdWriteData(TLcd *lcd, const uint8_t *data, int len, int rs) {
@@ -103,6 +103,8 @@ void lcdWriteText(TLcd *lcd, const uint8_t *data, int len) {
             lcdWriteData(lcd, (uint8_t[]){0b10000000 | (lcd->line << 6)}, 1, 0);
             lcd->pos = 0;
         }
+
+        delay(2);
     }
         //address
         //lcdWriteData(lcd, (uint8_t[]){0b10000000}, 1, 0);
