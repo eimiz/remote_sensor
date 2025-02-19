@@ -1,7 +1,8 @@
 #include "motion.h"
 #include "gpio.h"
-
+static int gpin;
 void motionInit(int pin) {
+    gpin = pin;
     //enable AFIO clock (not sure if needed)
     uint32_t *pENR2 = (uint32_t *)RCC_APB2ENR;
     *pENR2 |= 1 << 0;
@@ -32,3 +33,7 @@ void motionInit(int pin) {
     pISER[1] |= 1 << 8;
 }
 
+void motionClearInt() {
+    uint32_t *pRTSR = (uint32_t *)(INT_BASE + 0x14);
+    *pRTSR |= 1 << gpin;
+}

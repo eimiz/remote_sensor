@@ -25,6 +25,7 @@ int ledpos = 1;
 int ledpos2 = 1;
 int ledpos3 = 1;
 uint8_t charPos = 0;
+static int extCounter = 0;
 
 TLcd lcd;
 TWire1 wire1;
@@ -140,7 +141,10 @@ void USART2_IRQHandler() {
 }
 
 void EXTI15_10_IRQHandler() {
-    sendSomething("Pin changed ", 12); 
+    char text[32] = {0};
+    sprintf(text, "\r\nPin changed %i\r\n", ++extCounter);
+    sendSomething(text, strlen(text));
+    motionClearInt();
 }
 
 
