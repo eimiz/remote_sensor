@@ -11,6 +11,7 @@
 #include "timer.h"
 #include "lcd.h"
 #include "wire1.h"
+#include "motion.h"
 
 #define WIRE_PIN 0
 #define BLINKPIN2 6
@@ -138,6 +139,11 @@ void USART2_IRQHandler() {
     disableUartInt();
 }
 
+void EXTI15_10_IRQHandler() {
+    sendSomething("Pin changed ", 12); 
+}
+
+
 void DMA1_Channel6_IRQHandler() {
     clearDmaIntFlag();
     dmaIntCounter++;
@@ -173,6 +179,7 @@ void setup() {
   wire1Init(&wire1, &GPIOA, WIRE_PIN);
   timerInit(4, 9000);
   receiveUsartDma(rxbuffer, sizeof(rxbuffer));
+  motionInit(10);
 }
 
 void dumpAscii() {
