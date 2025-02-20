@@ -17,3 +17,30 @@ LDFLAGS=-mcpu=cortex-m3 -T stcubo.ld  --specs=nosys.specs -Wl,-Map="serial.map" 
 pot: 10k
 contrast to ground: 360
 contrast to vcc (3.3v): 9.4K
+2018-11-18
+#This is how much i remember:
+#Arduino boot loader
+1. Upload arduino boot loader /home/eimis/d5/progs/stm32f103t8c6/arduino_bootloader/generic_boot20_pc13_good.bin with stlink using stlink-gui.
+2. Now Arduino programs can  be compiled and uploaded using Arduino ide via built in micro usb. In case of errors check usb permissions in udev rules. If uploading using root works - then definitely udev rules must be tweaked.
+3. Enable flash upload verbose output in arduino ide - it will be possible to do uploading directly in bash.
+
+2024-12-21
+#writing
+st-flash write ./blink.forblack.pb12.bin 0x08000000
+
+St link use bin files for flashing.
+
+Power consumption blinky: 3.3v 28mA
+Arduino flashing does not work, neither via usb nor st-link.
+
+Blue board built in led PC13
+Black board built in led: PB12
+
+2025-02-03
+Black bluepill
+PA12 Microusb + (pulled up with 1.5KOhm resistor to 3.3v)
+PA11 Microusb -
+
+
+2025-02-07
+USART TC (transmission complete) interrupt is generated only when shift register is empty. When looping in a tight loop over a buffer and pushing to DR register a new byte whenever DR becomes free (checking SR->TXE bit), TC flag is not set, therefore no interrupt. 

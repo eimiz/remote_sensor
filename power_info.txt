@@ -1,0 +1,14 @@
+Direct battery load:
+No load batt: 3.93V
+Loading 2.2ohm
+3.28v - 1.27A
+
+1.5ohm
+3.12V - 1.66A
+
+Battery via charger. Voltage Accross load.
+Loading 2.2Ohm
+
+Voltage before load: 3.91V
+2.72V - 1.23A
+Batt voltage 3.23V during load
