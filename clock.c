@@ -78,7 +78,7 @@ void increaseFlashLatency(uint32_t FLatency) {
 
 }
 
-void modifyReg(uint32_t *p, uint32_t msk, uint32_t val) {
+void modifyReg(volatile uint32_t *p, uint32_t msk, uint32_t val) {
 	uint32_t reg = *p;
     reg &= ~(msk);
     reg |= val;

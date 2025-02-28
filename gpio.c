@@ -14,13 +14,24 @@ void gpioEnableClock(GPIO_Type *gpio) {
 void gpioEnable(GPIO_Type *gpio, uint8_t pin, GpioDirection dir) {
   uint8_t cnf;
   uint8_t mode;
-  if (dir == GPIO_IN) {
-      cnf = 1;
-      mode = 0;
-  } else {
-      cnf = 0;
-      mode = 1;
+  switch (dir) {
+      case GPIO_IN:
+          mode = 0;
+          cnf = 1;
+          break;
+      break;
+      case GPIO_OUT:
+        mode = 1;
+        cnf = 0;
+        break;
+      case GPIO_OUT_APP:
+        mode = 0b11;
+        cnf = 0b10;
+        break;
+       default:
   }
+
+
 
   const uint8_t mode_bp = (pin % 8) * 4;
   const uint8_t cnf_bp = mode_bp + 2;

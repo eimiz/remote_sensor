@@ -303,7 +303,7 @@ void readTemp() {
         sendSomething("Read ok ", 8);
         //sprintf(buf, "t=%f", wire1.tempr);
         formatTempr(buft, wire1.tmain, wire1.tfrac);
-        sprintf(buf, "Tmp=%s", buft);
+        sprintf(buf, "Tmpp=%s", buft);
         lcdHome(&lcd);
         lcdWriteText(&lcd, buf, strlen(buf));
         lcdWriteText(&lcd, (uint8_t[]){2, 'C'}, 2);

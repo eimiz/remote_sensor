@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 #define __IO volatile
-typedef enum {GPIO_IN, GPIO_OUT} GpioDirection;
+typedef enum {GPIO_IN, GPIO_OUT, GPIO_OUT_APP} GpioDirection;
 typedef struct
 {
   __IO uint32_t CRL;
@@ -21,6 +21,7 @@ typedef struct {
 
 #define RCC_BOUNDARY_ADDRESS 0x40021000
 #define RCC_APB2ENR (RCC_BOUNDARY_ADDRESS + 0x18)
+#define GPIOB_BOUNDARY_ADDRESS 0x40010C00 
 extern GPIO_Type GPIOA;
 extern GPIO_Type GPIOB;
 extern GPIO_Type GPIOD;

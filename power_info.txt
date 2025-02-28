@@ -12,3 +12,12 @@ Loading 2.2Ohm
 Voltage before load: 3.91V
 2.72V - 1.23A
 Batt voltage 3.23V during load
+
+
+5v smallest buck converter (green), output 4v.
+4.7Ohm - 0.8A, No voltage drop, cool to touch
+2.2Ohm - 1.51A, Voltage drop to 3.6, gets hot quickly
+
+5V in, big buck converter, 4V
+4.7Ohm load 0.75A 3.8V
+2.2Ohm  1.44A 3.26V gets warm, but slower than the smallest buck converter
