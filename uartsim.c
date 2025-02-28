@@ -52,3 +52,7 @@ void uartsimDisableInt() {
 void uartsimSend(uint8_t data) {
     UART3->DR = data;
 }
+
+uint8_t uartsimRead() {
+    return UART3->DR;
+}

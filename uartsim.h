@@ -4,3 +4,4 @@ void uartsimEnableNVICint();
 void uartsimEnableInt();
 void uartsimDisableInt();
 void uartsimSend(uint8_t data);
+uint8_t uartsimRead();

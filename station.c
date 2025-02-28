@@ -20,14 +20,15 @@
 uint8_t buffer[200] = {"Pradzia! "};
 uint8_t rxbuffer[3] = {"***"};
 uint16_t bpos = 0;
-volatile static bool receivedData = false;
+static bool receivedData = false;
+static bool receivedSimData = false;
 int32_t dmaIntCounter = 0;
 int ledpos = 1;
 int ledpos2 = 1;
 int ledpos3 = 1;
 uint8_t charPos = 0;
 static int extCounter = 0;
-
+int uart3Counter = 0;
 TLcd lcd;
 TWire1 wire1;
 char buftmp[20];
@@ -148,6 +149,13 @@ void USART2_IRQHandler() {
     uartDisableInt();
 }
 
+void USART3_IRQHandler() {
+    receivedSimData = true;
+    uartsimDisableInt();
+    //timerDisableInt();
+    uart3Counter++;
+}
+
 void EXTI15_10_IRQHandler() {
     char text[32] = {0};
     sprintf(text, "\r\nPin changed %i\r\n", ++extCounter);
@@ -187,6 +195,7 @@ void setup() {
   gpioEnable(&GPIOB, BLINKPIN3, GPIO_OUT);
   uartInit();
   uartEnableNVICint();
+  uartsimEnableNVICint();
   initDma();
   wire1Init(&wire1, &GPIOA, WIRE_PIN);
   timerInit(4, 9000);
@@ -316,6 +325,9 @@ void readTemp() {
         lcdHome(&lcd);
         lcdWriteText(&lcd, buf, strlen(buf));
         lcdWriteText(&lcd, (uint8_t[]){2, 'C'}, 2);
+        sprintf(buf, " %i", uart3Counter);
+        lcdWriteText(&lcd, buf, strlen(buf));
+
         sendSomething(buf, sizeof(buf));
         sendSomething(" ", 1);
     } else {
@@ -331,6 +343,13 @@ void configTemp() {
     } else {
         sendSomething("Conf er ", 8);
     }
+}
+
+void readsimData() {
+    uint8_t val = uartsimRead();
+    timerDisableInt();
+    lcdWriteText(&lcd, "Got it", 6);
+    timerEnableInt();
 }
 
 void readRxData() {
@@ -397,6 +416,13 @@ void loop() {
         receivedData = false;
     }
 
+    if (receivedSimData) {
+        readsimData();
+       // timerDisableInt();
+        uartsimEnableInt();
+        receivedSimData = false;
+    }
+
   checkEvents();
   /*
   if (!regsSent) {
@@ -427,6 +453,8 @@ int main(void) {
   delay(10);
   setup();
   uartEnableInt();
+  uartsimRead();
+  uartsimEnableInt();
   timerEnableInt();
   timerStart();
 //  fillBufferWithRegs();
