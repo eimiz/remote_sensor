@@ -12,6 +12,7 @@
 #include "lcd.h"
 #include "wire1.h"
 #include "motion.h"
+#include "uartsim.h"
 
 #define WIRE_PIN 0
 #define BLINKPIN2 6
@@ -40,8 +41,9 @@ void lcdProcess();
 void sendSomething(const char *lbuf, int len);
 void storeChars();
 void readTemp();
+void uartsimProcess();
 
-typedef enum {TEMPR_EVENT = 0, MOTION_EVENT, CHECKCHARGE_EVENT, BLINK_EVENT, BLINK2_EVENT, BLINK3_EVENT, LCD_EVENT} TEvent;
+typedef enum {TEMPR_EVENT = 0, MOTION_EVENT, CHECKCHARGE_EVENT, BLINK_EVENT, BLINK2_EVENT, BLINK3_EVENT, LCD_EVENT, UARTSIM_EVENT} TEvent;
 typedef void (*TaskFunc)(void);
 typedef struct {
    const TEvent event;
@@ -57,8 +59,14 @@ Task tasks[] = {{TEMPR_EVENT, dallasProc, 1500, 0},
     {BLINK_EVENT, ledBlink, 500, 0},
     {BLINK2_EVENT, ledBlink2, 284, 0},
     {BLINK3_EVENT, ledBlink3, 320, 0},
+    {UARTSIM_EVENT, uartsimProcess, 320, 0},
     {LCD_EVENT, lcdProcess, 0, 0},
     };
+
+
+void uartsimProcess() {
+    uartsimSend('a');
+}
 
 void lcdProcess() {
     sendSomething("lcd ", 4);
@@ -184,6 +192,7 @@ void setup() {
   timerInit(4, 9000);
   receiveUsartDma(rxbuffer, sizeof(rxbuffer));
   motionInit(10);
+  uartsimInit();
 }
 
 void dumpAscii() {
