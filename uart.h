@@ -33,6 +33,23 @@
 #define UART_RE_ENABLE 2
 #define UART_UE_ENABLE 13
 #define UART_PCLK_BIT 11
+#define __IO volatile
+
+typedef struct
+{
+  __IO uint32_t SR;         /*!< USART Status register,                   Address offset: 0x00 */
+  __IO uint32_t DR;         /*!< USART Data register,                     Address offset: 0x04 */
+  __IO uint32_t BRR;        /*!< USART Baud rate register,                Address offset: 0x08 */
+  __IO uint32_t CR1;        /*!< USART Control register 1,                Address offset: 0x0C */
+  __IO uint32_t CR2;        /*!< USART Control register 2,                Address offset: 0x10 */
+  __IO uint32_t CR3;        /*!< USART Control register 3,                Address offset: 0x14 */
+  __IO uint32_t GTPR;       /*!< USART Guard time and prescaler register, Address offset: 0x18 */
+} USART_TypeDef;
+
+
+extern USART_TypeDef *UART3;
+extern USART_TypeDef *UART2;
+
 
 //usart2: 17, usart3: 18
 #define USART2_RST_BITPOS 17

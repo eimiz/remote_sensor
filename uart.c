@@ -1,3 +1,4 @@
+#pragma once
 #include <stdint.h>
 #include "uart.h"
 #include "gpio.h"
@@ -5,6 +6,8 @@
 #define TX_MODE_BITPOS  (TX_PIN*4)
 #define TX_CNF_BITPOS  (TX_MODE_BITPOS + 2)
 
+USART_TypeDef *UART3 = (USART_TypeDef *)(0x40004800);
+USART_TypeDef *UART2 = (USART_TypeDef *)(0x40004400);
 static uint8_t current = 0;
 
 static void initTxGpio() {
@@ -38,30 +41,26 @@ void disableUartInt() {
 void initUart() {
      initTxGpio();
 
-     uint32_t *pCR1 = (uint32_t *)UART_CR1;
     //disable uart
-    *pCR1 &=  ~(1 << UART_UE_ENABLE);
+    UART2->CR1 &=  ~(1 << UART_UE_ENABLE);
 
     //enable UART2 clock
     uint32_t *pENR = (uint32_t *)UART_APB1ENR;
     *pENR |= 1 << UART_EN_BIT;
 
-
-    uint32_t *pBRR = (uint32_t*)UART_BRR;
     //set boud rate 
     //12 higher bits main part, 4 lower bits - fraction
     //115200 when pclk1 is 8MHz 4.34 = (8e6 / (16 * 115200))
     //115200 when pclk1 is 24MHz 13.02 = (24e6 / (16 * 115200))
     //115200 when pclk1 is 36MHz 19.53125 = (36e6 / (16 * 115200))
     //*pBRR = 5 | (4 << 4);
-    *pBRR = 9 | (19 << 4);
+    UART2->BRR = 9 | (19 << 4);
 
     //enable transmitter and receiver
-    *pCR1 |=   (1 << UART_TE_ENABLE) | (1 << UART_RE_ENABLE);
-
+    UART2->CR1 |=   (1 << UART_TE_ENABLE) | (1 << UART_RE_ENABLE);
 
     //enable uart
-    *pCR1 |=  (1 << UART_UE_ENABLE);
+    UART2->CR1 |=  (1 << UART_UE_ENABLE);
 }
 
 void toggleGpio() {
