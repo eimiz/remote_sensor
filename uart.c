@@ -1,7 +1,7 @@
-#pragma once
 #include <stdint.h>
 #include "uart.h"
 #include "gpio.h"
+#include "nvic.h"
 #define TX_PIN  2
 #define TX_MODE_BITPOS  (TX_PIN*4)
 #define TX_CNF_BITPOS  (TX_MODE_BITPOS + 2)
@@ -14,31 +14,20 @@ static void initTxGpio() {
     gpioEnable(&GPIOA, TX_PIN, GPIO_OUT_APP);
 }
 
-void enableUartNVICint() {
+void uartEnableNVICint() {
     //usart2 irq is 38
-    uint32_t *pISER = (uint32_t *)(0xE000E100);
-    pISER[1] = 1 << 6;
-
-//    NVIC_EnableIRQ(38);
-
+    nvicEnableIRQ(38);
 }
 
-void enableUartInt() {
-     uint32_t *pCR1 = (uint32_t *)UART_CR1;
-    //enable uart interrupt
-//    *pCR1 |= (1 << TCIE);
-    //ready to read
-    *pCR1 |= (1 << RXNEIE);
+void uartEnableInt() {
+    UART2->CR1 |= (1 << RXNEIE);
 }
 
-void disableUartInt() {
-     uint32_t *pCR1 = (uint32_t *)UART_CR1;
-//    *pCR1 &= ~(1 << TCIE);
-
-    *pCR1 &= ~(1 << RXNEIE);
+void uartDisableInt() {
+    UART2->CR1 &= ~(1 << RXNEIE);
 }
 
-void initUart() {
+void uartInit() {
      initTxGpio();
 
     //disable uart
@@ -74,8 +63,6 @@ void toggleGpio() {
     }
 }
 
-void sendData1(uint8_t data) {
-   // toggleGpio();
-    uint32_t *pDR = (uint32_t *)UART_DR;
-    *pDR = data;
+void uartSend(uint8_t data) {
+    UART2->DR = data;
 }

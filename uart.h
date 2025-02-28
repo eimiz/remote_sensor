@@ -70,9 +70,8 @@ extern USART_TypeDef *UART2;
 #define UART_CR2 (UART_BOUNDARY + UART_CR2_OFFSET)
 #define UART_CR3 (UART_BOUNDARY + UART_CR3_OFFSET)
 
-void initUart();
-void sendData1(uint8_t data);
-void enableUartInt();
-void disableUartInt();
-void enableUartNVICint();
-void clearDmaIntFlag();
+void uartInit();
+void uartSend(uint8_t data);
+void uartEnableInt();
+void uartDisableInt();
+void uartEnableNVICint();

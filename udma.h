@@ -30,3 +30,4 @@
 void initDma();
 void receiveUsartDma(uint8_t *buffer, uint16_t size);
 void disableDmaInt();
+void clearDmaIntFlag();

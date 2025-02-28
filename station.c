@@ -137,7 +137,7 @@ void TIM2_IRQHandler() {
 
 void USART2_IRQHandler() {
     receivedData = true;
-    disableUartInt();
+    uartDisableInt();
 }
 
 void EXTI15_10_IRQHandler() {
@@ -165,7 +165,7 @@ void DMA1_Channel6_IRQHandler() {
 void sendSomething(const char *lbuf, int len) {
     uint32_t *pSR = (uint32_t*)UART_SR;
     for (int i = 0; i < len; i++) {
-        sendData1(lbuf[i]);
+        uartSend(lbuf[i]);
         while (!(*pSR &(1 << 7))) { (void)0;};
     }
 }
@@ -177,8 +177,8 @@ void setup() {
   gpioEnable(&GPIOB, 5, GPIO_OUT);
   gpioEnable(&GPIOA, BLINKPIN2, GPIO_OUT);
   gpioEnable(&GPIOB, BLINKPIN3, GPIO_OUT);
-  initUart();
-  enableUartNVICint();
+  uartInit();
+  uartEnableNVICint();
   initDma();
   wire1Init(&wire1, &GPIOA, WIRE_PIN);
   timerInit(4, 9000);
@@ -303,7 +303,7 @@ void readTemp() {
         sendSomething("Read ok ", 8);
         //sprintf(buf, "t=%f", wire1.tempr);
         formatTempr(buft, wire1.tmain, wire1.tfrac);
-        sprintf(buf, "Tmpp=%s", buft);
+        sprintf(buf, "Tmp1=%s", buft);
         lcdHome(&lcd);
         lcdWriteText(&lcd, buf, strlen(buf));
         lcdWriteText(&lcd, (uint8_t[]){2, 'C'}, 2);
@@ -384,7 +384,7 @@ void loop() {
     delay(1);
     if (receivedData) {
         readRxData();
-        enableUartInt();
+        uartEnableInt();
         receivedData = false;
     }
 
@@ -417,7 +417,7 @@ int main(void) {
   clockConfig();
   delay(10);
   setup();
-  enableUartInt();
+  uartEnableInt();
   timerEnableInt();
   timerStart();
 //  fillBufferWithRegs();
