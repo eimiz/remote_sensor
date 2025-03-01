@@ -39,8 +39,6 @@ int intDisCounter = 0;
 TLcd lcd;
 TWire1 wire1;
 TBuf rxCbuf;
-uint8_t bigbuf[200];
-int bufindex = 0;
 char buftmp[20];
 uint32_t events;
 void dallasProc();
@@ -399,17 +397,13 @@ void readRxData() {
             events |= 1 << LCD_EVENT;
             break;
         case 13:
-//            uint8_t tmpBuf[CIRC_BUF_SIZE];
-//            int n = cbufRead(&rxCbuf, tmpBuf, sizeof tmpBuf);
-//            tmpBuf[bufindex] = '\0';
-              bigbuf[bufindex] = '\0';
-              bufindex = 0;
-            //int rez = commandExec(tmpBuf);
-            int rez = commandExec(bigbuf);
+            uint8_t tmpBuf[CIRC_BUF_SIZE];
+            int n = cbufRead(&rxCbuf, tmpBuf, sizeof tmpBuf);
+            tmpBuf[n] = '\0';
+            int rez = commandExec(tmpBuf);
             if (rez) {
                 if (!passThrough) {
-                    //lcdWriteText(&lcd, tmpBuf, strlen(tmpBuf));
-                    lcdWriteText(&lcd, bigbuf, strlen(bigbuf));
+                    lcdWriteText(&lcd, tmpBuf, strlen(tmpBuf));
                 } else {
                     uartsimSendBuf((uint8_t[]){13, 10}, 2);
                 }
@@ -419,10 +413,7 @@ void readRxData() {
             if (passThrough) {
                 uartsimSend(val);
             }
-            bigbuf[bufindex++] = val;
-//            cbufWrite(&rxCbuf, (uint8_t *)&val, 1);
-              
-
+            cbufWrite(&rxCbuf, (uint8_t *)&val, 1);
     }
 /*        case 's':
             storeChars();
