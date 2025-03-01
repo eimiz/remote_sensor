@@ -26,12 +26,14 @@ uint16_t bpos = 0;
 static bool receivedData = false;
 static bool receivedSimData = false;
 int32_t dmaIntCounter = 0;
+static bool passThrough = false;
 int ledpos = 1;
 int ledpos2 = 1;
 int ledpos3 = 1;
 uint8_t charPos = 0;
 static int extCounter = 0;
 int uart3Counter = 0;
+int uart2Counter = 0;
 TLcd lcd;
 TWire1 wire1;
 TBuf rxCbuf;
@@ -152,6 +154,7 @@ void TIM2_IRQHandler() {
 
 void USART2_IRQHandler() {
     receivedData = true;
+    uart2Counter++;
     uartDisableInt();
 }
 
@@ -355,8 +358,15 @@ void configTemp() {
 void readsimData() {
     uint8_t val = uartsimRead();
     timerDisableInt();
-    lcdWriteText(&lcd, "Got it", 6);
+    lcdProcess();
+    uint8_t tmpbuf[32];
+    sprintf(tmpbuf, "U2:%i, U3:%i", uart2Counter, uart3Counter);
+    lcdWriteText(&lcd, tmpbuf, strlen(tmpbuf));
     timerEnableInt();
+}
+
+void commandPassThrough() {
+    passThrough = !passThrough;
 }
 
 void readRxData() {
@@ -371,8 +381,13 @@ void readRxData() {
     }
     return;
     */
+
+
    timerDisableInt();
+
+
     switch(val) {
+
         case 8:
             events |= 1 << LCD_EVENT;
             break;
@@ -382,11 +397,19 @@ void readRxData() {
             tmpBuf[n] = '\0';
             int rez = commandExec(tmpBuf);
             if (rez) {
-                lcdWriteText(&lcd, tmpBuf, strlen(tmpBuf));
+                if (!passThrough) {
+                    lcdWriteText(&lcd, tmpBuf, strlen(tmpBuf));
+                } else {
+                    uartsimSendBuf((uint8_t[]){13, 10}, 2);
+                }
             }
             break;
         default:
+            if (passThrough) {
+                uartsimSend(val);
+            }
             cbufWrite(&rxCbuf, (uint8_t *)&val, 1);
+
     }
 /*        case 's':
             storeChars();
