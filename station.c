@@ -36,6 +36,7 @@ int uart3Counter = 0;
 int uart2Counter = 0;
 int intEnaCounter = 0;
 int intDisCounter = 0;
+int oreCounter = 0;
 TLcd lcd;
 TWire1 wire1;
 TBuf rxCbuf;
@@ -159,6 +160,9 @@ void USART2_IRQHandler() {
     uart2Counter++;
     uartDisableInt();
     intDisCounter++;
+    if (UART2->SR & (1 << 3)) {
+        oreCounter++;
+    }
 }
 
 void USART3_IRQHandler() {
@@ -364,7 +368,7 @@ void readsimData() {
     lcdProcess();
     uint8_t tmpbuf[32];
 //    sprintf(tmpbuf, "U2:%i, U3:%i", uart2Counter, uart3Counter);
-    sprintf(tmpbuf, "EN:%i, DIS:%i", intEnaCounter, intDisCounter);
+    sprintf(tmpbuf, "EN:%i DIS:%i OR:%i", intEnaCounter, intDisCounter, oreCounter);
     lcdWriteText(&lcd, tmpbuf, strlen(tmpbuf));
     uartEnableInt();
     timerEnableInt();
@@ -457,6 +461,7 @@ void checkEvents() {
 static bool regsSent = false;
 void loop() {
     delaymu(1);
+//    delay(1);
     if (receivedData) {
         readRxData();
 
