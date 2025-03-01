@@ -34,9 +34,13 @@ uint8_t charPos = 0;
 static int extCounter = 0;
 int uart3Counter = 0;
 int uart2Counter = 0;
+int intEnaCounter = 0;
+int intDisCounter = 0;
 TLcd lcd;
 TWire1 wire1;
 TBuf rxCbuf;
+uint8_t bigbuf[200];
+int bufindex = 0;
 char buftmp[20];
 uint32_t events;
 void dallasProc();
@@ -156,6 +160,7 @@ void USART2_IRQHandler() {
     receivedData = true;
     uart2Counter++;
     uartDisableInt();
+    intDisCounter++;
 }
 
 void USART3_IRQHandler() {
@@ -360,8 +365,10 @@ void readsimData() {
     timerDisableInt();
     lcdProcess();
     uint8_t tmpbuf[32];
-    sprintf(tmpbuf, "U2:%i, U3:%i", uart2Counter, uart3Counter);
+//    sprintf(tmpbuf, "U2:%i, U3:%i", uart2Counter, uart3Counter);
+    sprintf(tmpbuf, "EN:%i, DIS:%i", intEnaCounter, intDisCounter);
     lcdWriteText(&lcd, tmpbuf, strlen(tmpbuf));
+    uartEnableInt();
     timerEnableInt();
 }
 
@@ -392,13 +399,17 @@ void readRxData() {
             events |= 1 << LCD_EVENT;
             break;
         case 13:
-            uint8_t tmpBuf[CIRC_BUF_SIZE];
-            int n = cbufRead(&rxCbuf, tmpBuf, sizeof tmpBuf);
-            tmpBuf[n] = '\0';
-            int rez = commandExec(tmpBuf);
+//            uint8_t tmpBuf[CIRC_BUF_SIZE];
+//            int n = cbufRead(&rxCbuf, tmpBuf, sizeof tmpBuf);
+//            tmpBuf[bufindex] = '\0';
+              bigbuf[bufindex] = '\0';
+              bufindex = 0;
+            //int rez = commandExec(tmpBuf);
+            int rez = commandExec(bigbuf);
             if (rez) {
                 if (!passThrough) {
-                    lcdWriteText(&lcd, tmpBuf, strlen(tmpBuf));
+                    //lcdWriteText(&lcd, tmpBuf, strlen(tmpBuf));
+                    lcdWriteText(&lcd, bigbuf, strlen(bigbuf));
                 } else {
                     uartsimSendBuf((uint8_t[]){13, 10}, 2);
                 }
@@ -408,7 +419,9 @@ void readRxData() {
             if (passThrough) {
                 uartsimSend(val);
             }
-            cbufWrite(&rxCbuf, (uint8_t *)&val, 1);
+            bigbuf[bufindex++] = val;
+//            cbufWrite(&rxCbuf, (uint8_t *)&val, 1);
+              
 
     }
 /*        case 's':
@@ -452,18 +465,20 @@ void checkEvents() {
 
 static bool regsSent = false;
 void loop() {
-    delay(1);
+    delaymu(1);
     if (receivedData) {
         readRxData();
-        uartEnableInt();
+
+        intEnaCounter++;
         receivedData = false;
+        uartEnableInt();
     }
 
     if (receivedSimData) {
         readsimData();
        // timerDisableInt();
-        uartsimEnableInt();
         receivedSimData = false;
+        uartsimEnableInt();
     }
 
   checkEvents();
