@@ -3,7 +3,7 @@ CC=arm-none-eabi-gcc
 OBJCOPY=arm-none-eabi-objcopy
 
 MACH=cortex-m3
-CFLAGS= -c -mcpu=$(MACH) -mthumb -std=gnu11 -Wall -g -O0 -ffunction-sections -fdata-sections 
+CFLAGS= -c -mcpu=$(MACH) -mthumb -std=gnu11 -Wall -g -O0 -ffunction-sections -fdata-sections -I ../../c/sim800client
 
 LDFLAGS= -mcpu=cortex-m3 -T stm32_ls.ld  -Wl,-Map=station.map  -static --specs=nano.specs -Wl,--gc-sections -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 #LDFLAGS=-mcpu=cortex-m3 -T stcubo.ld  --specs=nosys.specs -Wl,-Map="station.map" -static --specs=nano.specs  -mfloat-abi=soft -Wl,--gc-sections  -mthumb -Wl,--start-group -lc -lm -Wl,--end-group 
@@ -14,7 +14,7 @@ all: station.bin
 station.bin: station.elf
 	$(OBJCOPY) -O binary $^ $@
 
-station.elf: udma.o station.o delay.o gpio.o stm32_startup.o uart.o eutils.o sysmem.o syscalls.o timer.o lcd.o wire1.o clock.o motion.o nvic.o uartsim.o
+station.elf: udma.o station.o delay.o gpio.o stm32_startup.o uart.o eutils.o sysmem.o syscalls.o timer.o lcd.o wire1.o clock.o motion.o nvic.o uartsim.o commands.o ../../c/sim800client/circbuf.o
 	$(CC) $(LDFLAGS) -o $@ $^
 
 .PHONY: clean

@@ -13,12 +13,15 @@
 #include "wire1.h"
 #include "motion.h"
 #include "uartsim.h"
+#include "circbuf.h"
+#include "commands.h"
 
 #define WIRE_PIN 0
 #define BLINKPIN2 6
 #define BLINKPIN3 12
 uint8_t buffer[200] = {"Pradzia! "};
 uint8_t rxbuffer[3] = {"***"};
+
 uint16_t bpos = 0;
 static bool receivedData = false;
 static bool receivedSimData = false;
@@ -31,6 +34,7 @@ static int extCounter = 0;
 int uart3Counter = 0;
 TLcd lcd;
 TWire1 wire1;
+TBuf rxCbuf;
 char buftmp[20];
 uint32_t events;
 void dallasProc();
@@ -55,12 +59,13 @@ typedef struct {
 static uint32_t ticks = 0;
 int tempstatus = 0;
 
-Task tasks[] = {{TEMPR_EVENT, dallasProc, 1500, 0},
+Task tasks[] = {
+    {TEMPR_EVENT, dallasProc, 1500, 0},
     {MOTION_EVENT, measureVoltage, 6300, 0},
     {BLINK_EVENT, ledBlink, 500, 0},
     {BLINK2_EVENT, ledBlink2, 284, 0},
     {BLINK3_EVENT, ledBlink3, 320, 0},
-    {UARTSIM_EVENT, uartsimProcess, 320, 0},
+//    {UARTSIM_EVENT, uartsimProcess, 320, 0},
     {LCD_EVENT, lcdProcess, 0, 0},
     };
 
@@ -92,7 +97,8 @@ void dallasProc() {
     } else  if (tempstatus == 2) {
         sendSomething("tmcfg ", 6);
         wire1Config(&wire1);
-        tempstatus = 3;
+        tempstatus = 9; //should be 3
+        lcdWriteText(&lcd, "Init", 4);
     } else if (tempstatus == 3) {
         sendSomething("measr ", 6);
         wire1MeasureTemp(&wire1);
@@ -196,10 +202,11 @@ void setup() {
   uartInit();
   uartEnableNVICint();
   uartsimEnableNVICint();
-  initDma();
+//  initDma();
+//  receiveUsartDma(rxbuffer, sizeof(rxbuffer));
   wire1Init(&wire1, &GPIOA, WIRE_PIN);
   timerInit(4, 9000);
-  receiveUsartDma(rxbuffer, sizeof(rxbuffer));
+  cbufInit(&rxCbuf);
   motionInit(10);
   uartsimInit();
 }
@@ -353,6 +360,7 @@ void readsimData() {
 }
 
 void readRxData() {
+
     uint32_t *pDR = (uint32_t *)UART_DR;
     const uint32_t val = *pDR;
     /*
@@ -368,7 +376,19 @@ void readRxData() {
         case 8:
             events |= 1 << LCD_EVENT;
             break;
-        case 's':
+        case 13:
+            uint8_t tmpBuf[CIRC_BUF_SIZE];
+            int n = cbufRead(&rxCbuf, tmpBuf, sizeof tmpBuf);
+            tmpBuf[n] = '\0';
+            int rez = commandExec(tmpBuf);
+            if (rez) {
+                lcdWriteText(&lcd, tmpBuf, strlen(tmpBuf));
+            }
+            break;
+        default:
+            cbufWrite(&rxCbuf, (uint8_t *)&val, 1);
+    }
+/*        case 's':
             storeChars();
             sendSomething("Stored ", 7);
             break;
@@ -392,10 +412,10 @@ void readRxData() {
             break;
         default:
             lcdWriteText(&lcd, (uint8_t[]){val}, 1);
-    }
+        }
+            */
     timerEnableInt();
 }
-
 
 void checkEvents() {
     for (int i = 0; i < ALEN(tasks); i++) {

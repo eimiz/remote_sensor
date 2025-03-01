@@ -3,10 +3,6 @@
 #define SKIP_ROM 0xCC
 #define MEASURE_TEMP 0x44
 #define READ_SCRATCH 0xBE
-static void doNop() {
-    (void)(0);
-}
-
 static void sendByte(TWire1 *wire1, uint8_t b) {
     for (int i = 0; i < 8; i++) {
         gpioEnable(wire1->gpio, wire1->pin, GPIO_OUT);
