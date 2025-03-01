@@ -102,7 +102,7 @@ void dallasProc() {
     } else  if (tempstatus == 2) {
         sendSomething("tmcfg ", 6);
         wire1Config(&wire1);
-        tempstatus = 9; //should be 3
+        tempstatus = 3; //should be 3
         lcdWriteText(&lcd, "Init", 4);
     } else if (tempstatus == 3) {
         sendSomething("measr ", 6);
