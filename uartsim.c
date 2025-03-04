@@ -59,8 +59,8 @@ uint8_t uartsimRead() {
 
 void uartsimSendBuf(const char *lbuf, int len) {
     for (int i = 0; i < len; i++) {
-        uartsimSend(lbuf[i]);
         while (!(UART3->SR & (1 << 7))) { (void)0;};
+        uartsimSend(lbuf[i]);
     }
 }
 

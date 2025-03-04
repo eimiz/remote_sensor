@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <string.h>
 #include "uart.h"
 #include "gpio.h"
 #include "nvic.h"
@@ -65,4 +66,17 @@ void toggleGpio() {
 
 void uartSend(uint8_t data) {
     UART2->DR = data;
+}
+
+
+void uartSendBuf(const char *lbuf, int len) {
+    for (int i = 0; i < len; i++) {
+        while (!(UART2->SR & (1 << 7))) { (void)0;};
+        uartSend(lbuf[i]);
+    }
+        while (!(UART2->SR & (1 << 7))) { (void)0;};
+}
+
+void uartSendStr(const char *lbuf) {
+    uartSendBuf(lbuf, strlen(lbuf));
 }

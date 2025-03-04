@@ -15,6 +15,7 @@
 #include "uartsim.h"
 #include "circbuf.h"
 #include "commands.h"
+#include "tempstates.h"
 
 #define WIRE_PIN 0
 #define BLINKPIN2 6
@@ -24,7 +25,8 @@ uint8_t rxbuffer[3] = {"***"};
 
 uint16_t bpos = 0;
 static bool receivedData = false;
-static bool receivedSimData = false;
+static bool simDataReceived = false;
+static bool simWatchByteReceived = false;
 int32_t dmaIntCounter = 0;
 static bool passThrough = false;
 int ledpos = 1;
@@ -42,45 +44,84 @@ TWire1 wire1;
 TBuf rxCbuf;
 char buftmp[20];
 uint32_t events;
-void dallasProc();
-void measureVoltage();
-void ledBlink();
-void ledBlink2();
-void ledBlink3();
-void lcdProcess();
-void sendSomething(const char *lbuf, int len);
-void storeChars();
-void readTemp();
-void uartsimProcess();
+void dallasProc(void *t);
+void measureVoltage(void *t);
+void ledBlink(void *t);
+void ledBlink2(void *t);
+void ledBlink3(void *t);
+void lcdProcess(void *t);
+void simrxWatch(void *t);
+void uartsimProcess(void *t);
 
-typedef enum {TEMPR_EVENT = 0, MOTION_EVENT, CHECKCHARGE_EVENT, BLINK_EVENT, BLINK2_EVENT, BLINK3_EVENT, LCD_EVENT, UARTSIM_EVENT} TEvent;
-typedef void (*TaskFunc)(void);
+
+void storeChars();
+
+
+typedef enum {TEMPR_EVENT = 0, MOTION_EVENT, CHECKCHARGE_EVENT, BLINK_EVENT, BLINK2_EVENT, BLINK3_EVENT, LCD_EVENT, SIMPROCESS_EVENT, SIMRX_WATCH_EVENT} TEvent;
+
+typedef void (*TaskFunc)(void *);
 typedef struct {
    const TEvent event;
    const TaskFunc func;
-   const uint32_t period;
+   //when period = 0 - EVENT must be set manually to execute the task
+    uint32_t period;
     uint32_t lastTick;
 } Task;
 static uint32_t ticks = 0;
 int tempstatus = 0;
 
+Task simrxWatchTask = {SIMRX_WATCH_EVENT, simrxWatch, 0, 0};
+Task blink1Task = {BLINK_EVENT, ledBlink, 500, 0};
+Task dallasTask = {TEMPR_EVENT, dallasProc, 1500, 0};
 Task tasks[] = {
-    {TEMPR_EVENT, dallasProc, 1500, 0},
-    {MOTION_EVENT, measureVoltage, 6300, 0},
-    {BLINK_EVENT, ledBlink, 500, 0},
+//    {TEMPR_EVENT, dallasProc, 1500, 0},
+//    {MOTION_EVENT, measureVoltage, 6300, 0},
+
     {BLINK2_EVENT, ledBlink2, 284, 0},
     {BLINK3_EVENT, ledBlink3, 320, 0},
-//    {UARTSIM_EVENT, uartsimProcess, 320, 0},
+    {SIMPROCESS_EVENT, uartsimProcess, 0, 0},
     {LCD_EVENT, lcdProcess, 0, 0},
     };
 
+void readTemp();
+int runningTasksCount = 0;
+Task *runningTasks[32];
 
-void uartsimProcess() {
-    uartsimSend('a');
+void postponeTask(Task *task, uint32_t period) {
+    task->lastTick = ticks;
+    task->period = period;
 }
 
-void lcdProcess() {
-    sendSomething("lcd ", 4);
+void startTask(Task *task) {
+    runningTasks[runningTasksCount++] = task;
+}
+
+void stationStartDallas() {
+    startTask(&dallasTask);
+}
+
+void simrxWatch(void *pt) {
+    Task *t = (Task *)pt;
+    uartSendStr("\r\n[watch]\r\n");
+    if (simWatchByteReceived) {
+        uartSendStr("\r\n[not yet]\r\n");
+        simWatchByteReceived = false;
+    } else {
+        uartSendStr("\r\n[[simdataNotReceived]]\r\n");
+        events |= 1 << SIMPROCESS_EVENT;
+        //stop it
+        t->period = 0;
+        uartSend('s');
+    }
+}
+
+void uartsimProcess(void *p) {
+   uartSendStr("[process]");
+   tsProcessResponse();
+}
+
+void lcdProcess(void *p) {
+    uartSendStr("lcd ");
     lcdInit(&lcd, 6, 7, 15, 14, 13, 9);
     delay(10);
 //    const char *txt = "Labas kaip einasi?";
@@ -90,53 +131,53 @@ void lcdProcess() {
 
 }
 
-void dallasProc() {
+void dallasProc(void *p) {
     if (tempstatus == 0) {
-        sendSomething("lcdin ", 6);
-        lcdProcess();
+        uartSendStr("lcdin ");
+        lcdProcess(p);
         tempstatus = 1;
     } else if (tempstatus == 1) {
-        sendSomething("stchr ", 6);
+        uartSendStr("stchr ");
         storeChars();
         tempstatus = 2;
     } else  if (tempstatus == 2) {
-        sendSomething("tmcfg ", 6);
+        uartSendStr("tmcfg ");
         wire1Config(&wire1);
         tempstatus = 3; //should be 3
         lcdWriteText(&lcd, "Init", 4);
     } else if (tempstatus == 3) {
-        sendSomething("measr ", 6);
+        uartSendStr("measr ");
         wire1MeasureTemp(&wire1);
         tempstatus = 4;
     } else if (tempstatus == 4) {
-        sendSomething("readt ", 6);
-        readTemp();
+        uartSendStr("readt ");
+        readTemp(p);
         tempstatus = 3;
     }
 }
 
-void measureVoltage() {
-    sendSomething("volt  ", 6);
+void measureVoltage(void *p) {
+    uartSendStr("volt  ");
 }
 
-void ledBlink() {
+void ledBlink(void *p) {
     if (ledpos++ %2 == 0) gpioOn(&GPIOB, 5);
     else gpioOff(&GPIOB, 5);
 }
 
-void ledBlink2() {
+void ledBlink2(void *p) {
     if (ledpos2++ %2 == 0) gpioOn(&GPIOA, BLINKPIN2);
     else gpioOff(&GPIOA, BLINKPIN2);
 }
 
-void ledBlink3() {
+void ledBlink3(void *p) {
     if (ledpos3++ %2 == 0) gpioOn(&GPIOB, BLINKPIN3);
     else gpioOff(&GPIOB, BLINKPIN3);
 }
 
-void processEvents() {
-    for (int i = 0; i < ALEN(tasks); i++) {
-        Task *t = &tasks[i];
+void processTasks() {
+    for (int i = 0; i < runningTasksCount; i++) {
+        Task *t = runningTasks[i];
         if ((t->period > 0) && (ticks - t->lastTick >= t->period)) {
             t->lastTick = ticks;
             events |= 1 << t->event;
@@ -151,7 +192,7 @@ void processEvents() {
 
 void TIM2_IRQHandler() {
     ticks++;
-    processEvents();
+    processTasks();
     timerClearInt();
 }
 
@@ -166,16 +207,20 @@ void USART2_IRQHandler() {
 }
 
 void USART3_IRQHandler() {
-    receivedSimData = true;
+    simDataReceived = true;
+    simWatchByteReceived = true;
     uartsimDisableInt();
     //timerDisableInt();
     uart3Counter++;
+    if (UART3->SR & (1 << 3)) {
+        oreCounter++;
+    }
 }
 
 void EXTI15_10_IRQHandler() {
     char text[32] = {0};
     sprintf(text, "\r\nPin changed %i\r\n", ++extCounter);
-    sendSomething(text, strlen(text));
+    uartSendStr(text);
     motionClearInt();
 }
 
@@ -192,14 +237,6 @@ void DMA1_Channel6_IRQHandler() {
     delaymu(40);
 //    lcdWriteText(&lcd, rxbuffer, sizeof(rxbuffer));
 
-}
-
-void sendSomething(const char *lbuf, int len) {
-    uint32_t *pSR = (uint32_t*)UART_SR;
-    for (int i = 0; i < len; i++) {
-        uartSend(lbuf[i]);
-        while (!(*pSR &(1 << 7))) { (void)0;};
-    }
 }
 
 void setup() {
@@ -219,6 +256,7 @@ void setup() {
   cbufInit(&rxCbuf);
   motionInit(10);
   uartsimInit();
+  tsInitTempStates();
 }
 
 void dumpAscii() {
@@ -229,7 +267,7 @@ void dumpAscii() {
         charPos += 32;
         char buf[13]={0};
         sprintf(buf, "[%i - %i] ", charPos - 32, charPos);
-        sendSomething(buf, sizeof(buf));
+        uartSendStr(buf);
 }
 
 void writeDegrees() {
@@ -283,19 +321,20 @@ void storeChars() {
 
 void checkTempPresent() {
     if (wire1Reset(&wire1)) {
-        sendSomething("present ", 8); 
+        uartSendStr("present ");
     } else {
-        sendSomething("Not pres ", 9); 
+        uartSendStr("Not pres ");
     }
 }
 
 void measureTemp() {
     if (wire1MeasureTemp(&wire1) == WIRE1_OK) {
-        sendSomething("Meas ok ", 8); 
+        uartSendStr("Meas ok ");
     } else {
-        sendSomething("Meas er ", 8); 
+        uartSendStr("Meas er ");
     }
 }
+
 void formatTempr(char *buf, uint8_t h, uint8_t l) {
     char *sign = "";
     int16_t combined = (h << 8) | l;
@@ -335,7 +374,7 @@ void readTemp() {
     char buf[40] = {0};
     char buft[20] = {0};
     if (wire1ReadTemp(&wire1) == WIRE1_OK) {
-        sendSomething("Read ok ", 8);
+        uartSendStr("Read ok ");
         //sprintf(buf, "t=%f", wire1.tempr);
         formatTempr(buft, wire1.tmain, wire1.tfrac);
         sprintf(buf, "Tmp1=%s", buft);
@@ -345,10 +384,10 @@ void readTemp() {
         sprintf(buf, " %i", uart3Counter);
         lcdWriteText(&lcd, buf, strlen(buf));
 
-        sendSomething(buf, sizeof(buf));
-        sendSomething(" ", 1);
+        uartSendStr(buf);
+        uartSendStr(" ");
     } else {
-        sendSomething("Read er ", 8); 
+        uartSendStr("Read er ");
     }
 
     
@@ -356,22 +395,18 @@ void readTemp() {
 
 void configTemp() {
     if (wire1Config(&wire1) == WIRE1_OK) {
-        sendSomething("Conf ok ", 8); 
+        uartSendStr("Conf ok ");
     } else {
-        sendSomething("Conf er ", 8);
+        uartSendStr("Conf er ");
     }
 }
 
 void readsimData() {
     uint8_t val = uartsimRead();
-    timerDisableInt();
-    lcdProcess();
-    uint8_t tmpbuf[32];
-//    sprintf(tmpbuf, "U2:%i, U3:%i", uart2Counter, uart3Counter);
-    sprintf(tmpbuf, "EN:%i DIS:%i OR:%i", intEnaCounter, intDisCounter, oreCounter);
-    lcdWriteText(&lcd, tmpbuf, strlen(tmpbuf));
+    tsAddByte(val);
     uartEnableInt();
-    timerEnableInt();
+    uartSendStr("**r");
+    postponeTask(&simrxWatchTask, 1200);
 }
 
 void commandPassThrough() {
@@ -421,7 +456,7 @@ void readRxData() {
     }
 /*        case 's':
             storeChars();
-            sendSomething("Stored ", 7);
+            uartSendStr("Stored ", 7);
             break;
         case 'S':
             lcdWriteText(&lcd, (uint8_t[]){0}, 1);
@@ -449,10 +484,10 @@ void readRxData() {
 }
 
 void checkEvents() {
-    for (int i = 0; i < ALEN(tasks); i++) {
-        Task *t = &tasks[i];
+    for (int i = 0; i < runningTasksCount; i++) {
+        Task *t = runningTasks[i];
         if (events & (1 << t->event)) {
-            t->func();
+            t->func(t);
             events &= ~(1 << t->event);
         }
     }
@@ -470,21 +505,21 @@ void loop() {
         uartEnableInt();
     }
 
-    if (receivedSimData) {
+    if (simDataReceived) {
         readsimData();
        // timerDisableInt();
-        receivedSimData = false;
+        simDataReceived = false;
         uartsimEnableInt();
     }
 
   checkEvents();
   /*
   if (!regsSent) {
-       sendSomething("\r\n", 2);
-      sendSomething(buffer, sizeof(buffer) -1);
+       uartSendStr("\r\n", 2);
+      uartSendStr(buffer, sizeof(buffer) -1);
       regsSent = true;
       timerDisableInt();
-      sendSomething("\r\n", 2);
+      uartSendStr("\r\n", 2);
   }
   */
 }
@@ -511,6 +546,12 @@ int main(void) {
   uartsimEnableInt();
   timerEnableInt();
   timerStart();
+  for (int i = 0; i < ALEN(tasks); i++) {
+      startTask(&tasks[i]);
+  }
+
+  startTask(&simrxWatchTask);
+  startTask(&blink1Task);
 //  fillBufferWithRegs();
   for(;;) {
     loop();

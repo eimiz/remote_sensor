@@ -75,3 +75,5 @@ void uartSend(uint8_t data);
 void uartEnableInt();
 void uartDisableInt();
 void uartEnableNVICint();
+void uartSendBuf(const char *lbuf, int len);
+void uartSendStr(const char *lbuf);
