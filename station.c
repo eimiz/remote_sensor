@@ -202,7 +202,7 @@ void USART2_IRQHandler() {
     uartDisableInt();
     intDisCounter++;
     if (UART2->SR & (1 << 3)) {
-        oreCounter++;
+     //   oreCounter++;
     }
 }
 
@@ -405,7 +405,7 @@ void readsimData() {
     uint8_t val = uartsimRead();
     tsAddByte(val);
     uartEnableInt();
-    uartSendStr("**r");
+   // uartSendStr("**r");
     postponeTask(&simrxWatchTask, 1200);
 }
 
@@ -495,7 +495,7 @@ void checkEvents() {
 
 static bool regsSent = false;
 void loop() {
-    delaymu(1);
+    //delaymu(1);
 //    delay(1);
     if (receivedData) {
         readRxData();
@@ -537,6 +537,12 @@ void fillBufferWithRegs() {
         }
 }
 
+void stationGetOreCounter() {
+    char buf[32];
+    sprintf(buf, "Ore cnt=%i\r\n", oreCounter);
+    uartSendStr(buf);
+}
+
 int main(void) {
   clockConfig();
   delay(10);
@@ -557,3 +563,5 @@ int main(void) {
     loop();
   }
 }
+
+

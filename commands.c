@@ -18,8 +18,10 @@ void commandPassThrough();
 void commandRunState();
 void commandStartDallas();
 void stationStartDallas();
+void stationGetOreCounter();
 TCommand commands[] = {{"hello", commandHello}, {"another", commandAnother}, 
-{"pass", commandPassThrough}, {"states", commandRunState}, {"dallas", commandStartDallas}};
+{"pass", commandPassThrough}, {"states", commandRunState}, {"dallas", commandStartDallas}, {"ore",
+stationGetOreCounter }};
 
 void commandStartDallas() {
     stationStartDallas();

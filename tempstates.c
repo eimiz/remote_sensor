@@ -41,6 +41,9 @@ void tsParseResponse() {
     int numread = cbufRead(&cbuf, buf, sizeof(buf));
 
     buf[numread] = '\0';
+    uartSendStr("\r\nRaw buf:\r\n[");
+    uartSendStr(buf);
+    uartSendStr("]\r\n");
 
 
     if (numread <= 0) {
@@ -78,6 +81,9 @@ void tsParseResponse() {
 
 void tsProcessResponse() {
     tsParseResponse();
+    uartSendStr("\r\nrespBuf:\r\n[");
+    uartSendStr(responseBuffer);
+    uartSendStr("]\r\n");
     if (strcmp(responseBuffer, "ERROR") != 0) {
         currentState = MIN(ASIZE(ALL_COMMANDS), currentState + 1);
     } else {
