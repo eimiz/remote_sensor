@@ -43,9 +43,9 @@ void uartInit() {
     //115200 when pclk1 is 8MHz 4.34 = (8e6 / (16 * 115200))
     //115200 when pclk1 is 24MHz 13.02 = (24e6 / (16 * 115200))
     //115200 when pclk1 is 36MHz 19.53125 = (36e6 / (16 * 115200))
-    //UART2->BRR = 9 | (19 << 4);
+    UART2->BRR = 9 | (19 << 4);
     //19200 36MHz = 117.1875
-    UART2->BRR = (117 << 4) | 3;
+    //UART2->BRR = (117 << 4) | 3;
 
     //enable transmitter and receiver
     UART2->CR1 |=   (1 << UART_TE_ENABLE) | (1 << UART_RE_ENABLE);

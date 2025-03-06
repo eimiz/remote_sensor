@@ -1,10 +1,13 @@
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "eutils.h"
 #include "uartsim.h"
 #include "uart.h"
 
-#include "tempstates.h"
 
+#include "tempstates.h"
+extern uint32_t ticks;
 typedef void (*ComFunc)(void);
 
 typedef struct {
@@ -28,7 +31,13 @@ void commandStartDallas() {
 }
 
 void commandHello() {
+    char buf[32];
     uartSendStr("Hello received\r\n");
+    srand(ticks);
+    int r = rand();
+    //int r = 0;
+    sprintf(buf, "r=%i\r\n", r);
+    uartSendStr(buf);
 }
 
 void commandAnother() {

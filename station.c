@@ -67,7 +67,7 @@ typedef struct {
     uint32_t period;
     uint32_t lastTick;
 } Task;
-static uint32_t ticks = 0;
+uint32_t ticks = 0;
 int tempstatus = 0;
 
 Task simrxWatchTask = {SIMRX_WATCH_EVENT, simrxWatch, 0, 0};
@@ -151,7 +151,7 @@ void dallasProc(void *p) {
         tempstatus = 4;
     } else if (tempstatus == 4) {
         uartSendStr("readt ");
-        readTemp(p);
+        readTemp();
         tempstatus = 3;
     }
 }
@@ -378,6 +378,7 @@ void readTemp() {
         //sprintf(buf, "t=%f", wire1.tempr);
         formatTempr(buft, wire1.tmain, wire1.tfrac);
         sprintf(buf, "Tmp1=%s", buft);
+        uartSendStr(buf);
         lcdHome(&lcd);
         lcdWriteText(&lcd, buf, strlen(buf));
         lcdWriteText(&lcd, (uint8_t[]){2, 'C'}, 2);
@@ -406,11 +407,17 @@ void readsimData() {
     tsAddByte(val);
     uartEnableInt();
    // uartSendStr("**r");
-    postponeTask(&simrxWatchTask, 1200);
+	if (!passThrough) {
+	    postponeTask(&simrxWatchTask, 1200);
+	}
 }
 
 void commandPassThrough() {
     passThrough = !passThrough;
+	if (passThrough)
+		uartSendStr("\r\nPass through ON\r\n");
+	else
+		uartSendStr("\r\nPass through OFF\r\n");
 }
 
 void readRxData() {
