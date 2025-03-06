@@ -96,8 +96,27 @@ void startTask(Task *task) {
     runningTasks[runningTasksCount++] = task;
 }
 
-void stationStartDallas() {
-    startTask(&dallasTask);
+bool isTaskRunning(Task *task) {
+	for (int i = 0; i < runningTasksCount; i++) {
+        if (runningTasks[i] == task) {
+            return true;
+        }
+	}
+
+    return false;
+}
+
+void stationDallas() {
+	if (!isTaskRunning(&dallasTask)) {
+        uartSendStr("\r\nStarting dallas for the first time\r\n");
+        startTask(&dallasTask);
+    } else if (dallasTask.period == 0) {
+        uartSendStr("\r\nResuming dallas\r\n");
+        dallasTask.period = 1500;
+    } else {
+        uartSendStr("\r\nStopping dallas\r\n");
+        dallasTask.period = 0;
+    }
 }
 
 void simrxWatch(void *pt) {
