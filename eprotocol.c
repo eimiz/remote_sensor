@@ -13,6 +13,18 @@ static uint32_t chakey[8];
 
 
 TEbase64 b64;
+static void incPolyNonce() {
+    polynonce[2]++;
+    if (polynonce[2] != 0)
+        return;
+
+    polynonce[1]++;
+    if (polynonce[1] != 0)
+        return;
+
+    polynonce[0]++;
+}
+
 static void printHex(const char txt[], int len, const char *msg) {
 	uartSendLog(msg);
 	char buf[16];
@@ -39,14 +51,14 @@ static void genRandom(uint8_t *buffer, int len) {
     }
 }
 
-void eproCreateHelloBuffer(uint8_t *bufout) {
+void eproCreateHelloBuffer(uint8_t *encbuffer) {
 	genRandom(clNonce, sizeof(clNonce));
 	uint8_t lbuffer[HELLO_LEN];
 	memcpy(lbuffer, HELLO_MAGIC, HELLO_MAGIC_LEN);
     memcpy(lbuffer + HELLO_MAGIC_LEN, clNonce, RAND_NONCE_LEN);
 	ebase64Reset(&b64);
-    int wrote = ebase64Encode(&b64, lbuffer, sizeof(lbuffer), bufout);
-	wrote += ebase64FinishEncode(&b64, bufout + wrote);
+    int wrote = ebase64Encode(&b64, lbuffer, sizeof(lbuffer), encbuffer);
+	wrote += ebase64FinishEncode(&b64, encbuffer + wrote);
 }
 
 EproRez eproReadServerNonces(uint8_t *buf) {
@@ -72,10 +84,23 @@ EproRez eproReadServerNonces(uint8_t *buf) {
     if (memcmp(hash, hashReceived, HASH_LEN)) {
         uartSendLog("Hash mismatch");
         return EPRO_HASH_MISMATCH;
-    } else {
-        uartSendLog("Hash OK\n");
     }
 
-
+    uartSendLog("Hash OK\n");
     return EPRO_OK;
+}
+
+void eproCreateClientHash(uint8_t *encbuffer) {
+    uint8_t polykey[32];
+    uint8_t hashbuffer[RAND_NONCE_LEN + RAND_NONCE_LEN + HASH_LEN];
+    memcpy(hashbuffer, endpointNonce, RAND_NONCE_LEN);
+    genRandom(hashbuffer + RAND_NONCE_LEN, RAND_NONCE_LEN);
+    uint8_t *hash = hashbuffer + sizeof(hashbuffer) - HASH_LEN;
+    incPolyNonce();
+    polyGenKey(chakey, polynonce, polykey);
+    poly(polykey, hashbuffer, sizeof(hashbuffer) - HASH_LEN, hash);
+    ebase64Reset(&b64);
+    uint8_t *outbuffer = hashbuffer + RAND_NONCE_LEN;
+    int wrote = ebase64Encode(&b64, outbuffer, CLIENT_HASH_LEN, encbuffer);
+    wrote += ebase64FinishEncode(&b64, encbuffer + wrote);
 }

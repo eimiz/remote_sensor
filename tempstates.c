@@ -65,6 +65,16 @@ void commandConsumeSentOk() {
 void commandConsumeNonceAndHash() {
     uartSendStr("\r\nProcessing nonce and hash\r\n");
     EproRez rez = eproReadServerNonces(responseBuffer);
+
+    if (rez != EPRO_OK) {
+		return;
+
+    }
+    //rand128bitnonce, hash
+    uint8_t outbuffer[(CLIENT_HASH_LEN * 8 + 6 - 1)/6];
+    eproCreateClientHash(outbuffer);
+    uartsimSendBuf(outbuffer, sizeof(outbuffer));
+    uartsimSendStr(CTRL_Z);
 }
 
 void commandHelloMagic() {
