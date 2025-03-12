@@ -9,7 +9,7 @@ const static uint8_t HELLO_MAGIC[HELLO_MAGIC_LEN] = {0xe9, 0xde, 0xcb, 0xd9, 0xe
 static uint8_t clNonce[RAND_NONCE_LEN] = {0};
 static uint8_t endpointNonce[RAND_NONCE_LEN];
 static uint32_t polynonce[3];
-static uint32_t chakey[8];
+static uint32_t chakey[8] = ${chakey};
 
 
 TEbase64 b64;
@@ -79,7 +79,9 @@ EproRez eproReadServerNonces(uint8_t *buf) {
     memcpy(polynonce, fullbuffer + RAND_NONCE_LEN + RAND_NONCE_LEN + NONCE_LEN, NONCE_LEN);
     polyGenKey(chakey, polynonce, polykey);
     uint8_t hash[HASH_LEN];
+    printHex(fullbuffer, sizeof(fullbuffer) - HASH_LEN, "Computing hash on");
     poly(polykey, fullbuffer, sizeof(fullbuffer) - HASH_LEN, hash);
+    printHex(hash, HASH_LEN, "Hash is");
     printHex(hashReceived, HASH_LEN, "Received hash");
     if (memcmp(hash, hashReceived, HASH_LEN)) {
         uartSendLog("Hash mismatch");

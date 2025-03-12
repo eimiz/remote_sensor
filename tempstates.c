@@ -48,7 +48,7 @@ const SimCommand CONSUME_NONCEHASH_CMD = {commandConsumeNonceAndHash, NULL, CTRL
 static TBuf cbuf;
 //const SimCommand * const  ALL_COMMANDS[] = {&TEST_COMMAND, &WIRELESS_APN, &WIRELESS_UP, &IPADDR_COMMAND, &CONN_COMMAND, &SEND_COMMAND, &TEXT_COMMAND, &SEND_COMMAND, &TEXT_COMMAND2};
 const SimCommand * const  ALL_COMMANDS[] = {&TEST_COMMAND, &WIRELESS_APN, &WIRELESS_UP, &IPADDR_COMMAND, &CONN_COMMAND,
- &SEND_COMMAND, &HELLO_MAGIC, &CONSUME_SENTOK_CMD, &CONSUME_NONCEHASH_CMD };
+ &SEND_COMMAND, &HELLO_MAGIC, &CONSUME_NONCEHASH_CMD };
 static int currentState = 0;
 uint8_t responseBuffer[200];
 
@@ -65,14 +65,19 @@ void commandConsumeSentOk() {
 void commandConsumeNonceAndHash() {
     uartSendStr("\r\nProcessing nonce and hash\r\n");
     EproRez rez = eproReadServerNonces(responseBuffer);
+    uint8_t buf[32];
 
     if (rez != EPRO_OK) {
+        sprintf(buf, "Error, code=%i", rez);
+        uartSendLog(buf);
 		return;
 
     }
     //rand128bitnonce, hash
     uint8_t outbuffer[(CLIENT_HASH_LEN * 8 + 6 - 1)/6];
+    uartSendLog("creating client hash");
     eproCreateClientHash(outbuffer);
+    uartSendLog("sending client hash");
     uartsimSendBuf(outbuffer, sizeof(outbuffer));
     uartsimSendStr(CTRL_Z);
 }
