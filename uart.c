@@ -81,3 +81,9 @@ void uartSendBuf(const char *lbuf, int len) {
 void uartSendStr(const char *lbuf) {
     uartSendBuf(lbuf, strlen(lbuf));
 }
+
+void uartSendLog(const char *lbuf) {
+	uartSendStr("\r\n");
+	uartSendStr(lbuf);
+	uartSendStr("\r\n");
+}
