@@ -18,6 +18,7 @@
 void commandHelloMagic();
 void commandConsumeSentOk();
 void commandConsumeNonceAndHash();
+void commandSendClientHash();
 typedef void (*CommandFunc)();
 typedef enum {STATE_INIT, STATE_GPRS_INIT, STATE_CONNECTING, STATE_READY} ClState;
 typedef struct {
@@ -41,14 +42,14 @@ const SimCommand  TEXT_COMMAND2 = {NULL, "Another Info from sim800!!\r\n", CTRL_
 const SimCommand HELLO_MAGIC = {commandHelloMagic, NULL, CTRL_Z};
 const SimCommand CONSUME_SENTOK_CMD = {commandConsumeSentOk, NULL, NULL};
 const SimCommand CONSUME_NONCEHASH_CMD = {commandConsumeNonceAndHash, NULL, CTRL_Z};
-
-
+const SimCommand SEND_CLIENT_HASH_CMD = {commandSendClientHash, NULL, CTRL_Z};
 
 
 static TBuf cbuf;
 //const SimCommand * const  ALL_COMMANDS[] = {&TEST_COMMAND, &WIRELESS_APN, &WIRELESS_UP, &IPADDR_COMMAND, &CONN_COMMAND, &SEND_COMMAND, &TEXT_COMMAND, &SEND_COMMAND, &TEXT_COMMAND2};
 const SimCommand * const  ALL_COMMANDS[] = {&TEST_COMMAND, &WIRELESS_APN, &WIRELESS_UP, &IPADDR_COMMAND, &CONN_COMMAND,
- &SEND_COMMAND, &HELLO_MAGIC, &CONSUME_NONCEHASH_CMD };
+ &SEND_COMMAND, &HELLO_MAGIC, &CONSUME_NONCEHASH_CMD,
+ &SEND_COMMAND, &SEND_CLIENT_HASH_CMD };
 static int currentState = 0;
 uint8_t responseBuffer[200];
 
@@ -73,6 +74,12 @@ void commandConsumeNonceAndHash() {
 		return;
 
     }
+
+    currentState++;
+    tsRunState();
+}
+
+void commandSendClientHash() {
     //rand128bitnonce, hash
     uint8_t outbuffer[(CLIENT_HASH_LEN * 8 + 6 - 1)/6];
     uartSendLog("creating client hash");
