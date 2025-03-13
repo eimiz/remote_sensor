@@ -4,13 +4,15 @@
 #include "ebase64.h"
 #include "eprotocol.h"
 #include "poly1305.h"
+#include "chacha.h"
 #include "uart.h"
 const static uint8_t HELLO_MAGIC[HELLO_MAGIC_LEN] = {0xe9, 0xde, 0xcb, 0xd9, 0xe9, 0xd4, 0xb2, 0x7a, 0xe8, 0xde, 0xfd, 0xf9, 0x5c, 0x73, 0xd4, 0xf4};
 static uint8_t clNonce[RAND_NONCE_LEN] = {0};
 static uint8_t endpointNonce[RAND_NONCE_LEN];
 static uint32_t polynonce[3];
 static uint32_t chakey[8] = ${chakey};
-
+static uint32_t chanonce[3];
+uint32_t chacounter = 0;
 
 TEbase64 b64;
 static void incPolyNonce() {
@@ -88,6 +90,7 @@ EproRez eproReadServerNonces(uint8_t *buf) {
         return EPRO_HASH_MISMATCH;
     }
 
+    memcpy(chanonce, fullbuffer + RAND_NONCE_LEN + RAND_NONCE_LEN, NONCE_LEN);
     uartSendLog("Hash OK\n");
     return EPRO_OK;
 }
@@ -105,4 +108,26 @@ void eproCreateClientHash(uint8_t *encbuffer) {
     uint8_t *outbuffer = hashbuffer + RAND_NONCE_LEN;
     int wrote = ebase64Encode(&b64, outbuffer, CLIENT_HASH_LEN, encbuffer);
     wrote += ebase64FinishEncode(&b64, encbuffer + wrote);
+}
+
+void eproCreateDataBuf(uint8_t *encbuffer, uint8_t *data, int len) {
+    chacounter++;
+    uint8_t polykey[32];
+    const int OUT_BUFFER_LEN =NONCE_LEN +  CHA_COUNTER_LEN + len + HASH_LEN;
+                    //polynonce, counter, cryptdata, hash
+    uint8_t outbuffer[OUT_BUFFER_LEN];
+    uint8_t *hash = outbuffer + OUT_BUFFER_LEN - HASH_LEN;
+    memcpy(outbuffer + NONCE_LEN, &chacounter, sizeof(chacounter));
+    uint8_t *cdata = outbuffer + NONCE_LEN + CHA_COUNTER_LEN;
+    memcpy(cdata, data, len);
+    incPolyNonce();
+    memcpy(outbuffer, polynonce, NONCE_LEN);
+    chaEnc(chakey, chanonce, chacounter, cdata, len);
+    polyGenKey(chakey, polynonce, polykey);
+    poly(polykey, outbuffer, OUT_BUFFER_LEN - HASH_LEN, hash);
+    printHex(outbuffer, OUT_BUFFER_LEN, "client sendEncData sending with hash");
+	ebase64Reset(&b64);
+    int wrote = ebase64Encode(&b64, outbuffer, OUT_BUFFER_LEN, encbuffer);
+    wrote += ebase64FinishEncode(&b64, encbuffer + wrote);
+
 }

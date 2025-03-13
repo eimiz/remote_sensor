@@ -81,7 +81,7 @@ static void commandConsumeNonceAndHash() {
 
 static void commandSendClientHash() {
     //rand128bitnonce, hash
-    uint8_t outbuffer[(CLIENT_HASH_LEN * 8 + 6 - 1)/6];
+    uint8_t outbuffer[ENC_SIZE(CLIENT_HASH_LEN) ];
     uartSendLog("creating client hash");
     eproCreateClientHash(outbuffer);
     uartSendLog("sending client hash");
@@ -91,7 +91,7 @@ static void commandSendClientHash() {
 
 static void commandHelloMagic() {
 	uartSendStr("\r\nSending hello magic\r\n");
-	const uint8_t buf[(HELLO_LEN * 8 + 6 - 1)/6];
+	const uint8_t buf[ENC_SIZE(HELLO_LEN)];
 	eproCreateHelloBuffer(buf);
 	uartsimSendBuf(buf, sizeof(buf));
 	uartsimSendStr(CTRL_Z);
