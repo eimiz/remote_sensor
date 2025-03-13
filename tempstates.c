@@ -14,11 +14,11 @@
 
 #define NONCE_LEN 12
 
-
-void commandHelloMagic();
-void commandConsumeSentOk();
-void commandConsumeNonceAndHash();
-void commandSendClientHash();
+void stationHandshakeFinishedCallback();
+static void commandHelloMagic();
+static void commandConsumeSentOk();
+static void commandConsumeNonceAndHash();
+static void commandSendClientHash();
 typedef void (*CommandFunc)();
 typedef enum {STATE_INIT, STATE_GPRS_INIT, STATE_CONNECTING, STATE_READY} ClState;
 typedef struct {
@@ -53,7 +53,7 @@ const SimCommand * const  ALL_COMMANDS[] = {&TEST_COMMAND, &WIRELESS_APN, &WIREL
 static int currentState = 0;
 uint8_t responseBuffer[200];
 
-void commandConsumeSentOk() {
+static void commandConsumeSentOk() {
     //buffer should contain Send OK
     if (strcmp(responseBuffer, "SEND OK")) {
         uartSendLog("got SEND OK");
@@ -63,7 +63,7 @@ void commandConsumeSentOk() {
 
 }
 
-void commandConsumeNonceAndHash() {
+static void commandConsumeNonceAndHash() {
     uartSendStr("\r\nProcessing nonce and hash\r\n");
     EproRez rez = eproReadServerNonces(responseBuffer);
     uint8_t buf[32];
@@ -79,7 +79,7 @@ void commandConsumeNonceAndHash() {
     tsRunState();
 }
 
-void commandSendClientHash() {
+static void commandSendClientHash() {
     //rand128bitnonce, hash
     uint8_t outbuffer[(CLIENT_HASH_LEN * 8 + 6 - 1)/6];
     uartSendLog("creating client hash");
@@ -89,7 +89,7 @@ void commandSendClientHash() {
     uartsimSendStr(CTRL_Z);
 }
 
-void commandHelloMagic() {
+static void commandHelloMagic() {
 	uartSendStr("\r\nSending hello magic\r\n");
 	const uint8_t buf[(HELLO_LEN * 8 + 6 - 1)/6];
 	eproCreateHelloBuffer(buf);
@@ -163,7 +163,7 @@ void tsProcessResponse() {
     }
 }
 
-void uartWriteFunc(const SimCommand *c) {
+static void uartWriteFunc(const SimCommand *c) {
     uartsimSendBuf(c->command, strlen(c->command));
     uartsimSendBuf(c->submitCommand, strlen(c->submitCommand));
 }

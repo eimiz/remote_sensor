@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include "station.h"
 #include "clock.h"
 #include "delay.h"
 #include "gpio.h"
@@ -16,6 +17,7 @@
 #include "circbuf.h"
 #include "commands.h"
 #include "tempstates.h"
+#include "tempstream.h"
 
 #define WIRE_PIN 0
 #define BLINKPIN2 6
@@ -40,7 +42,7 @@ int intEnaCounter = 0;
 int intDisCounter = 0;
 int oreCounter = 0;
 TLcd lcd;
-TWire1 wire1;
+static TWire1 wire1;
 TBuf rxCbuf;
 char buftmp[20];
 uint32_t events;
@@ -57,30 +59,21 @@ void uartsimProcess(void *t);
 void storeChars();
 
 
-typedef enum {TEMPR_EVENT = 0, MOTION_EVENT, CHECKCHARGE_EVENT, BLINK_EVENT, BLINK2_EVENT, BLINK3_EVENT, LCD_EVENT, SIMPROCESS_EVENT, SIMRX_WATCH_EVENT} TEvent;
 
-typedef void (*TaskFunc)(void *);
-typedef struct {
-   const TEvent event;
-   const TaskFunc func;
-   //when period = 0 - EVENT must be set manually to execute the task
-    uint32_t period;
-    uint32_t lastTick;
-} Task;
 uint32_t ticks = 0;
 int tempstatus = 0;
 
-Task simrxWatchTask = {SIMRX_WATCH_EVENT, simrxWatch, 0, 0};
-Task blink1Task = {BLINK_EVENT, ledBlink, 500, 0};
-Task dallasTask = {TEMPR_EVENT, dallasProc, 1500, 0};
+Task simrxWatchTask = {SIMRX_WATCH_EVENT, simrxWatch, 0, 0, false};
+Task blink1Task = {BLINK_EVENT, ledBlink, 500, 0, true};
+Task dallasTask = {TEMPR_EVENT, dallasProc, 1500, 0, true};
+
 Task tasks[] = {
 //    {TEMPR_EVENT, dallasProc, 1500, 0},
 //    {MOTION_EVENT, measureVoltage, 6300, 0},
 
-    {BLINK2_EVENT, ledBlink2, 284, 0},
-    {BLINK3_EVENT, ledBlink3, 320, 0},
-    {SIMPROCESS_EVENT, uartsimProcess, 0, 0},
-    {LCD_EVENT, lcdProcess, 0, 0},
+    {BLINK2_EVENT, ledBlink2, 284, 0, true},
+    {BLINK3_EVENT, ledBlink3, 320, 0, true},
+    {SIMPROCESS_EVENT, uartsimProcess, 0, 0, false},
     };
 
 void readTemp();
@@ -90,13 +83,10 @@ Task *runningTasks[32];
 void postponeTask(Task *task, uint32_t period) {
     task->lastTick = ticks;
     task->period = period;
+    task->active = true;
 }
 
-void startTask(Task *task) {
-    runningTasks[runningTasksCount++] = task;
-}
-
-bool isTaskRunning(Task *task) {
+bool isTaskRegistered(Task *task) {
 	for (int i = 0; i < runningTasksCount; i++) {
         if (runningTasks[i] == task) {
             return true;
@@ -106,17 +96,24 @@ bool isTaskRunning(Task *task) {
     return false;
 }
 
-void stationDallas() {
-	if (!isTaskRunning(&dallasTask)) {
-        uartSendStr("\r\nStarting dallas for the first time\r\n");
-        startTask(&dallasTask);
-    } else if (dallasTask.period == 0) {
-        uartSendStr("\r\nResuming dallas\r\n");
-        dallasTask.period = 1500;
-    } else {
-        uartSendStr("\r\nStopping dallas\r\n");
-        dallasTask.period = 0;
+void stationStartTask(Task *task) {
+    if (!isTaskRegistered(task)) {
+        runningTasks[runningTasksCount++] = task;
     }
+
+    task->active = true;
+}
+
+void stationStopTask(Task *task) {
+    task->active = false;
+}
+
+void stationDallas() {
+	if (!dallasTask.active) {
+        stationStartTask(&dallasTask);
+    } else  {
+        stationStopTask(&dallasTask);
+    } 
 }
 
 void simrxWatch(void *pt) {
@@ -129,7 +126,7 @@ void simrxWatch(void *pt) {
         uartSendStr("\r\n[[simdataNotReceived]]\r\n");
         events |= 1 << SIMPROCESS_EVENT;
         //stop it
-        t->period = 0;
+        t->active = false;
         uartSend('s');
     }
 }
@@ -197,7 +194,7 @@ void ledBlink3(void *p) {
 void processTasks() {
     for (int i = 0; i < runningTasksCount; i++) {
         Task *t = runningTasks[i];
-        if ((t->period > 0) && (ticks - t->lastTick >= t->period)) {
+        if (t->active && (ticks - t->lastTick >= t->period)) {
             t->lastTick = ticks;
             events |= 1 << t->event;
         }
@@ -409,8 +406,28 @@ void readTemp() {
     } else {
         uartSendStr("Read er ");
     }
+}
 
-    
+void readAndSendTemp() {
+    char buf[40] = {0};
+    char buft[20] = {0};
+    if (wire1ReadTemp(&wire1) == WIRE1_OK) {
+        uartSendStr("Read ok ");
+        //sprintf(buf, "t=%f", wire1.tempr);
+        formatTempr(buft, wire1.tmain, wire1.tfrac);
+        sprintf(buf, "Tmp1=%s", buft);
+        uartSendStr(buf);
+        lcdHome(&lcd);
+        lcdWriteText(&lcd, buf, strlen(buf));
+        lcdWriteText(&lcd, (uint8_t[]){2, 'C'}, 2);
+        sprintf(buf, " %i", uart3Counter);
+        lcdWriteText(&lcd, buf, strlen(buf));
+
+        uartSendStr(buf);
+        uartSendStr(" ");
+    } else {
+        uartSendStr("Read er ");
+    }
 }
 
 void configTemp() {
@@ -459,7 +476,8 @@ void readRxData() {
     switch(val) {
 
         case 8:
-            events |= 1 << LCD_EVENT;
+//            events |= 1 << LCD_EVENT;
+            lcdProcess(NULL);
             break;
         case 13:
             uint8_t tmpBuf[CIRC_BUF_SIZE];
@@ -569,6 +587,11 @@ void stationGetOreCounter() {
     uartSendStr(buf);
 }
 
+
+void stationHandshakeFinishedCallback() {
+    tempStreamStart();
+}
+
 int main(void) {
   clockConfig();
   delay(10);
@@ -579,11 +602,11 @@ int main(void) {
   timerEnableInt();
   timerStart();
   for (int i = 0; i < ALEN(tasks); i++) {
-      startTask(&tasks[i]);
+      stationStartTask(&tasks[i]);
   }
 
-  startTask(&simrxWatchTask);
-  startTask(&blink1Task);
+  stationStartTask(&simrxWatchTask);
+  stationStartTask(&blink1Task);
 //  fillBufferWithRegs();
   for(;;) {
     loop();
