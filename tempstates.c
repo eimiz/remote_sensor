@@ -145,6 +145,10 @@ void tsParseResponse() {
 }
 
 void tsProcessResponse() {
+    if (currentState >= ASIZE(ALL_COMMANDS)) {
+        return;
+    }
+
     tsParseResponse();
     uartSendStr("\r\nrespBuf:\r\n[");
     uartSendStr(responseBuffer);
@@ -155,11 +159,14 @@ void tsProcessResponse() {
         currentState = MAX(0, currentState);
     }
 
+    char buf[8];
     uartSendStr("Current state is ");
-    uartSend('0' + currentState);
-    uartSendStr("\r\n");
+    sprintf(buf, "%i", currentState);
+    uartSendLog(buf);
     if (currentState < ASIZE(ALL_COMMANDS)) {
         tsRunState();
+    } else {
+        stationHandshakeFinishedCallback();
     }
 }
 

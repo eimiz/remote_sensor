@@ -19,7 +19,7 @@
 #include "tempstates.h"
 #include "tempstream.h"
 
-#define WIRE_PIN 0
+
 #define BLINKPIN2 6
 #define BLINKPIN3 12
 uint8_t buffer[200] = {"Pradzia! "};
@@ -603,6 +603,7 @@ void stationGetOreCounter() {
 
 
 void stationHandshakeFinishedCallback() {
+    uartSendLog("Finished callback called");
     tempStreamStart();
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 #include <stdbool.h>
 #include "gpio.h"
+#define WIRE_PIN 0
 typedef struct {
     GPIO_Type *gpio;
     int pin;
