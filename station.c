@@ -96,6 +96,12 @@ bool isTaskRegistered(Task *task) {
     return false;
 }
 
+void stationRegisterTask(Task *task) {
+    if (!isTaskRegistered(task)) {
+        runningTasks[runningTasksCount++] = task;
+    }
+}
+
 void stationStartTask(Task *task) {
     if (!isTaskRegistered(task)) {
         runningTasks[runningTasksCount++] = task;
@@ -109,6 +115,13 @@ void stationStopTask(Task *task) {
 }
 
 void stationDallas() {
+    char buf[32];
+    for (int i = 0; i < runningTasksCount; i++) {
+        Task *t = runningTasks[i];
+        sprintf(buf, "t:%i, act:%i|", i, t->active);
+        uartSendLog(buf);
+    }
+
 	if (!dallasTask.active) {
         stationStartTask(&dallasTask);
     } else  {
@@ -117,6 +130,7 @@ void stationDallas() {
 }
 
 void simrxWatch(void *pt) {
+//    return;
     Task *t = (Task *)pt;
     uartSendStr("\r\n[watch]\r\n");
     if (simWatchByteReceived) {
@@ -132,7 +146,7 @@ void simrxWatch(void *pt) {
 }
 
 void uartsimProcess(void *p) {
-   uartSendStr("[process]");
+   uartSendStr("[xrocess]");
    tsProcessResponse();
 }
 
@@ -602,11 +616,11 @@ int main(void) {
   timerEnableInt();
   timerStart();
   for (int i = 0; i < ALEN(tasks); i++) {
-      stationStartTask(&tasks[i]);
+      stationRegisterTask(&tasks[i]);
   }
 
-  stationStartTask(&simrxWatchTask);
-  stationStartTask(&blink1Task);
+  stationRegisterTask(&simrxWatchTask);
+  stationRegisterTask(&blink1Task);
 //  fillBufferWithRegs();
   for(;;) {
     loop();
