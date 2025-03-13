@@ -129,5 +129,5 @@ void eproCreateDataBuf(uint8_t *encbuffer, uint8_t *data, int len) {
 	ebase64Reset(&b64);
     int wrote = ebase64Encode(&b64, outbuffer, OUT_BUFFER_LEN, encbuffer);
     wrote += ebase64FinishEncode(&b64, encbuffer + wrote);
-
+    printHex(encbuffer, ENC_SIZE(OUT_BUFFER_LEN), "enced data");
 }

@@ -65,6 +65,8 @@ void uartsimSendBuf(const char *lbuf, int len) {
         while (!(UART3->SR & (1 << 7))) { (void)0;};
         uartsimSend(lbuf[i]);
     }
+
+    while (!(UART3->SR & (1 << 7))) { (void)0;};
 }
 
 void uartsimSendStr(const char *lbuf) {
