@@ -17,7 +17,6 @@
 #include "circbuf.h"
 #include "commands.h"
 #include "tempstates.h"
-#include "tempstream.h"
 
 
 #define BLINKPIN2 6
@@ -601,11 +600,6 @@ void stationGetOreCounter() {
     uartSendStr(buf);
 }
 
-
-void stationHandshakeFinishedCallback() {
-    uartSendLog("Finished callback called");
-    tempStreamStart();
-}
 
 int main(void) {
   clockConfig();

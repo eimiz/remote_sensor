@@ -131,3 +131,42 @@ void eproCreateDataBuf(uint8_t *encbuffer, uint8_t *data, int len) {
     wrote += ebase64FinishEncode(&b64, encbuffer + wrote);
     printHex(encbuffer, ENC_SIZE(OUT_BUFFER_LEN), "enced data");
 }
+
+int eproCheckResponse(const uint8_t *buffer) {
+    uartSendLog("Checking confirmation");
+    uint8_t polykey[32];
+    const ssize_t expectedLen = 12 + 4 + 16 + 16;
+    const int ENC_DATA_LEN = 16;
+	char lbuf[64];
+    if (strlen(buffer) != expectedLen) {
+        sprintf(lbuf, "wrong length of %i, should be %i\n", strlen(buffer), expectedLen);
+		uartSendLog(lbuf);
+        return 1;
+    }
+    //polynonce, counter, crypted data, hash
+    uint8_t fullbuffer[NONCE_LEN + CHA_COUNTER_LEN + 16 + HASH_LEN];
+    memcpy(fullbuffer, buffer, expectedLen);
+    uint8_t *data = fullbuffer + NONCE_LEN + CHA_COUNTER_LEN;
+    uint8_t *hashReceived = fullbuffer + sizeof(fullbuffer) - HASH_LEN;
+    memcpy(polynonce, fullbuffer, NONCE_LEN);
+    memcpy(&chacounter, fullbuffer + NONCE_LEN, sizeof(chacounter));
+    polyGenKey(chakey, polynonce, polykey);
+    uint8_t hash[HASH_LEN];
+    printHex(fullbuffer, sizeof(fullbuffer), "Data and hash");
+    poly(polykey, fullbuffer, sizeof(fullbuffer) - HASH_LEN, hash);
+    printHex(hash, HASH_LEN, "Hash is");
+    printHex(hashReceived, HASH_LEN, "Received hash");
+    if (memcmp(hash, hashReceived, HASH_LEN)) {
+        uartSendLog("Confirmation hash mismatch");
+        return 1;
+    } else {
+        uartSendLog("Confirmation Hash OK\n");
+    }
+
+
+    chaEnc(chakey, chanonce, chacounter, data, ENC_DATA_LEN);
+    printHex(data, 16, "Decrypted confirmation data");
+    uartSendLog("Decrypted msg: ");
+	uartSendLog(data);
+    return 0;
+}

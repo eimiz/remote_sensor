@@ -1,3 +1,2 @@
 #pragma once
-extern Task tempStreamTask;
-void tempStreamStart();
+void tempStreamProcess(const uint8_t *responseBuffer);

@@ -16,3 +16,4 @@ void eproCreateHelloBuffer(uint8_t *encbuffer);
 EproRez eproReadServerNonces(uint8_t *buf);
 void eproCreateClientHash(uint8_t *encbuffer);
 void eproCreateDataBuf(uint8_t *encbuffer, uint8_t *data, int len); 
+int eproCheckResponse(const uint8_t *buf);

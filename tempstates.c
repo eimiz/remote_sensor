@@ -7,6 +7,7 @@
 #include "uartsim.h"
 #include "tempstates.h"
 #include "eprotocol.h"
+#include "tempstream.h"
 
 #define ASIZE(x) (sizeof(x) / sizeof(x[0]))
 #define MIN(x,y) ((x) < (y)) ? (x) : (y)
@@ -14,7 +15,6 @@
 
 #define NONCE_LEN 12
 
-void stationHandshakeFinishedCallback();
 static void commandHelloMagic();
 static void commandConsumeSentOk();
 static void commandConsumeNonceAndHash();
@@ -166,7 +166,7 @@ void tsProcessResponse() {
     if (currentState < ASIZE(ALL_COMMANDS)) {
         tsRunState();
     } else {
-        stationHandshakeFinishedCallback();
+        tempStreamProcess(responseBuffer);
     }
 }
 
