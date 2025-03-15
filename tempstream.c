@@ -35,12 +35,14 @@ static void tempStreamStart() {
 }
 
 void tempStreamProcess(const uint8_t *responseBuffer) {
+    uartSendLog("tempStreamProcess");
     switch (tempState) {
         case INIT_STATE:
             tempStreamStart();
             break;
         case PARSE_ENDPOINT_RESPONSE_STATE:
-			eproCheckResponse(responseBuffer);
+            uartSendLog("Checking response");
+            eproCheckResponse(responseBuffer);
             break;
         default:
     }
@@ -68,7 +70,7 @@ static void tempMeasureProc(void *task) {
        case SEND_STATE:
             sendData();
             stationStopTask((Task*)task);
-            tempState = MEASURE_STATE;
+            tempState = PARSE_ENDPOINT_RESPONSE_STATE;
        default:
     }
 }

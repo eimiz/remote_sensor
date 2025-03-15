@@ -145,10 +145,6 @@ void tsParseResponse() {
 }
 
 void tsProcessResponse() {
-    if (currentState >= ASIZE(ALL_COMMANDS)) {
-        return;
-    }
-
     tsParseResponse();
     uartSendStr("\r\nrespBuf:\r\n[");
     uartSendStr(responseBuffer);
