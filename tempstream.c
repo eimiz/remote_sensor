@@ -43,10 +43,11 @@ void tempStreamProcess(const uint8_t *responseBuffer) {
         case PARSE_ENDPOINT_RESPONSE_STATE:
             uartSendLog("Checking response");
             eproCheckResponse(responseBuffer);
+            stationPostponeTask(&tempStreamTask, tempStreamTask.period);
+            tempState = MEASURE_STATE;
             break;
         default:
     }
-
 }
 
 
@@ -76,6 +77,7 @@ static void tempMeasureProc(void *task) {
 }
 
 static void sendCip() {
+    uartSendLog("Sending cip");
     uartsimSendStr("at+cipsend\n");
 }
 
@@ -98,7 +100,7 @@ static void readTemp() {
 
 static void sendData() {
     uartSendLog("Sending data");
-    uint8_t buffer[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18};
+    uint8_t buffer[] = {wire1.tfrac, wire1.tmain, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18};
     uint8_t encbuffer[ENC_SIZE(NONCE_LEN +  CHA_COUNTER_LEN + sizeof(buffer) + HASH_LEN)];
     char logbuf[32];
     sprintf(logbuf, "encbuf len:%i, raw len: %i", sizeof(encbuffer), NONCE_LEN +  CHA_COUNTER_LEN + sizeof(buffer) + HASH_LEN);

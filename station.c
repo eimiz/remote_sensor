@@ -79,7 +79,7 @@ void readTemp();
 int runningTasksCount = 0;
 Task *runningTasks[32];
 
-void postponeTask(Task *task, uint32_t period) {
+void stationPostponeTask(Task *task, uint32_t period) {
     task->lastTick = ticks;
     task->period = period;
     task->active = true;
@@ -114,17 +114,10 @@ void stationStopTask(Task *task) {
 }
 
 void stationDallas() {
-    char buf[32];
-    for (int i = 0; i < runningTasksCount; i++) {
-        Task *t = runningTasks[i];
-        sprintf(buf, "t:%i, act:%i|", i, t->active);
-        uartSendLog(buf);
-    }
-
-	if (!dallasTask.active) {
-        stationStartTask(&dallasTask);
-    } else  {
+	if (isTaskRegistered(&dallasTask) && dallasTask.active) {
         stationStopTask(&dallasTask);
+    } else  {
+        stationStartTask(&dallasTask);
     } 
 }
 
@@ -457,7 +450,7 @@ void readsimData() {
     uartEnableInt();
    // uartSendStr("**r");
 	if (!passThrough) {
-	    postponeTask(&simrxWatchTask, 1200);
+	    stationPostponeTask(&simrxWatchTask, 1200);
 	}
 }
 
