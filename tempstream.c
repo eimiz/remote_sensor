@@ -8,7 +8,7 @@
 static void tempStreamProc(void *task);
 static void tempMeasureProc(void *task);
 
-Task tempStreamTask = {TEMPR_STREAM_EVENT, tempStreamProc, 12000, 0, true};
+Task tempStreamTask = {TEMPR_STREAM_EVENT, tempStreamProc, 20000, 0, true};
 Task tempMeasureTask = {TEMPR_MEASURE_EVENT, tempMeasureProc, 1500, 0, true};
 typedef enum {INIT_STATE, MEASURE_STATE, READ_STATE, CIP_STATE, SEND_STATE, PARSE_ENDPOINT_RESPONSE_STATE} StreamState;
 StreamState tempState;
@@ -19,6 +19,7 @@ static void sendData();
 static void sendCip();
 static TWire1 wire1;
 static void tempStreamProc(void *task) {
+    stationStopTask(task);
     uartSendLog("stream proc invoked");
     stationStartTask(&tempMeasureTask);
 }
@@ -108,6 +109,6 @@ static void sendData() {
     eproCreateDataBuf(encbuffer, buffer, sizeof(buffer));
     uartsimSendBuf(encbuffer, sizeof(encbuffer));
     uartsimSend(26);
-    stationStopTask(&tempStreamTask);
+    //stationStopTask(&tempStreamTask);
 }
 
