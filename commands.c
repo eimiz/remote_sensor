@@ -4,9 +4,8 @@
 #include "eutils.h"
 #include "uartsim.h"
 #include "uart.h"
-
-
 #include "tempstates.h"
+#include "tempstream.h"
 extern uint32_t ticks;
 typedef void (*ComFunc)(void);
 
@@ -45,8 +44,16 @@ void commandAnother() {
 }
 
 void commandRunState() {
-    tsInitTempStates();
-    tsRunState();
+    if (!tsIsRunning()) {
+        uartSendLog("Starting states");
+        tsInitTempStates();
+        tsSetRunning(true);
+        tsRunState();
+    } else {
+        uartSendLog("Stopping states");
+        tsSetRunning(false);
+        tempStreamStop();
+    }
 }
 
 int commandExec(const char *cmd) {

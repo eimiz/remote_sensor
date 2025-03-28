@@ -19,7 +19,7 @@
 #include "tempstates.h"
 
 
-#define BLINKPIN2 6
+#define RESETPIN 6
 #define BLINKPIN3 12
 uint8_t buffer[200] = {"Pradzia! "};
 uint8_t rxbuffer[3] = {"***"};
@@ -48,9 +48,9 @@ uint32_t events;
 void dallasProc(void *t);
 void measureVoltage(void *t);
 void ledBlink(void *t);
-void ledBlink2(void *t);
 void ledBlink3(void *t);
 void lcdProcess(void *t);
+void autostartProcess(void *t);
 void simrxWatch(void *t);
 void uartsimProcess(void *t);
 
@@ -70,9 +70,9 @@ Task tasks[] = {
 //    {TEMPR_EVENT, dallasProc, 1500, 0},
 //    {MOTION_EVENT, measureVoltage, 6300, 0},
 
-    {BLINK2_EVENT, ledBlink2, 284, 0, true},
     {BLINK3_EVENT, ledBlink3, 320, 0, true},
     {SIMPROCESS_EVENT, uartsimProcess, 0, 0, false},
+    {AUTOSTART_EVENT, autostartProcess, 20000, 0, true},
     };
 
 void readTemp();
@@ -83,6 +83,18 @@ void stationPostponeTask(Task *task, uint32_t period) {
     task->lastTick = ticks;
     task->period = period;
     task->active = true;
+}
+
+void autostartProcess(void *t) {
+    commandExec("states");
+    stationStopTask((Task *)t);
+}
+
+
+void stationResetModem() {
+    gpioOff(&GPIOA, RESETPIN);
+    delay(2000);
+    gpioOn(&GPIOA, RESETPIN);
 }
 
 bool isTaskRegistered(Task *task) {
@@ -187,11 +199,6 @@ void ledBlink(void *p) {
     else gpioOff(&GPIOB, 5);
 }
 
-void ledBlink2(void *p) {
-    if (ledpos2++ %2 == 0) gpioOn(&GPIOA, BLINKPIN2);
-    else gpioOff(&GPIOA, BLINKPIN2);
-}
-
 void ledBlink3(void *p) {
     if (ledpos3++ %2 == 0) gpioOn(&GPIOB, BLINKPIN3);
     else gpioOff(&GPIOB, BLINKPIN3);
@@ -266,7 +273,7 @@ void setup() {
   gpioEnableClock(&GPIOB);
   gpioEnableClock(&GPIOD);
   gpioEnable(&GPIOB, 5, GPIO_OUT);
-  gpioEnable(&GPIOA, BLINKPIN2, GPIO_OUT);
+  gpioEnable(&GPIOA, RESETPIN, GPIO_OUT);
   gpioEnable(&GPIOB, BLINKPIN3, GPIO_OUT);
   uartInit();
   uartEnableNVICint();
@@ -279,6 +286,7 @@ void setup() {
   motionInit(10);
   uartsimInit();
   tsInitTempStates();
+  gpioOn(&GPIOA, RESETPIN);
 }
 
 void dumpAscii() {

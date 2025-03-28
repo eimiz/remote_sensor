@@ -1,9 +1,12 @@
 #include <stdio.h>
+#include <string.h>
 #include "station.h"
 #include "wire1.h"
 #include "uart.h"
 #include "uartsim.h"
 #include "eprotocol.h"
+#include "tempstates.h"
+#include "delay.h"
 
 static void tempStreamProc(void *task);
 static void tempMeasureProc(void *task);
@@ -35,6 +38,32 @@ static void tempStreamStart() {
     stationStartTask(&tempStreamTask);
 }
 
+void tempStreamReset() {
+    tempState = INIT_STATE;
+}
+
+void tempStreamStop() {
+    stationStopTask(&tempStreamTask);
+    stationStopTask(&tempMeasureTask);
+}
+
+static void parseEndpointDataResponse(const uint8_t *responseBuffer) {
+    if (strcmp(responseBuffer, "ERROR") == 0) {
+
+    }
+
+    uartSendLog("Checking response");
+    if (eproCheckResponse(responseBuffer)) {
+        uartSendLog("Reset modem from tempstream");
+        tsResetModemRestartStates();
+        stationResetModem();
+        return;
+    }
+
+    stationPostponeTask(&tempStreamTask, tempStreamTask.period);
+    tempState = MEASURE_STATE;
+}
+
 void tempStreamProcess(const uint8_t *responseBuffer) {
     uartSendLog("tempStreamProcess");
     switch (tempState) {
@@ -42,10 +71,7 @@ void tempStreamProcess(const uint8_t *responseBuffer) {
             tempStreamStart();
             break;
         case PARSE_ENDPOINT_RESPONSE_STATE:
-            uartSendLog("Checking response");
-            eproCheckResponse(responseBuffer);
-            stationPostponeTask(&tempStreamTask, tempStreamTask.period);
-            tempState = MEASURE_STATE;
+            parseEndpointDataResponse(responseBuffer);
             break;
         default:
     }
@@ -108,7 +134,10 @@ static void sendData() {
     uartSendLog(logbuf);
     eproCreateDataBuf(encbuffer, buffer, sizeof(buffer));
     uartsimSendBuf(encbuffer, sizeof(encbuffer));
+    delay(20);
     uartsimSend(26);
     //stationStopTask(&tempStreamTask);
 }
+
+
 

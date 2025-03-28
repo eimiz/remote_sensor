@@ -2,12 +2,15 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
+#include "delay.h"
 #include "circbuf.h"
 #include "uart.h"
 #include "uartsim.h"
 #include "tempstates.h"
 #include "eprotocol.h"
 #include "tempstream.h"
+#include "station.h"
 
 #define ASIZE(x) (sizeof(x) / sizeof(x[0]))
 #define MIN(x,y) ((x) < (y)) ? (x) : (y)
@@ -52,7 +55,7 @@ const SimCommand * const  ALL_COMMANDS[] = {&TEST_COMMAND, &WIRELESS_APN, &WIREL
  &SEND_COMMAND, &SEND_CLIENT_HASH_CMD };
 static int currentState = 0;
 uint8_t responseBuffer[200];
-
+static bool running = false;
 static void commandConsumeSentOk() {
     //buffer should contain Send OK
     if (strcmp(responseBuffer, "SEND OK")) {
@@ -144,6 +147,14 @@ void tsParseResponse() {
     responseBuffer[bcounter] = '\0';
 }
 
+void tsResetModemRestartStates() {
+        uartSendLog("Received error, reseting modem");
+        stationResetModem();
+        delay(10000);
+        tsInitTempStates();
+        tsRunState();
+}
+
 void tsProcessResponse() {
     tsParseResponse();
     uartSendStr("\r\nrespBuf:\r\n[");
@@ -152,7 +163,8 @@ void tsProcessResponse() {
     if (strcmp(responseBuffer, "ERROR") != 0) {
         currentState = MIN(ASIZE(ALL_COMMANDS), currentState + 1);
     } else {
-        currentState = MAX(0, currentState);
+        tsResetModemRestartStates();
+        return;
     }
 
     char buf[8];
@@ -174,6 +186,10 @@ static void uartWriteFunc(const SimCommand *c) {
 void tsInitTempStates() {
     cbufInit(&cbuf);
     currentState = 0;
+    tempStreamReset();
+    //send something to modem to autoconfigure baud rate
+    uartsimSendStr("AT");
+    uartsimSendStr(ENDL);
 }
 
 static void execCommand (const SimCommand *c) {
@@ -183,8 +199,16 @@ static void execCommand (const SimCommand *c) {
     uartWriteFunc(c);
 }
 
+void tsSetRunning(bool r) {
+    running = r;
+}
+
+bool tsIsRunning() {
+    return running;
+}
+
 void tsRunState() {
-    if (currentState >= ASIZE(ALL_COMMANDS)) {
+    if (!running || currentState >= ASIZE(ALL_COMMANDS)) {
         return;
     }
 
