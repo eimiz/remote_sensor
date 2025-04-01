@@ -44,3 +44,11 @@ PA11 Microusb -
 
 2025-02-07
 USART TC (transmission complete) interrupt is generated only when shift register is empty. When looping in a tight loop over a buffer and pushing to DR register a new byte whenever DR becomes free (checking SR->TXE bit), TC flag is not set, therefore no interrupt. 
+
+
+2025-04-01
+Get service provider:
+at+cspn?
++CSPN: "EZYS",0
+
+OK

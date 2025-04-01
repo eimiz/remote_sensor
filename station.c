@@ -72,7 +72,7 @@ Task tasks[] = {
 
     {BLINK3_EVENT, ledBlink3, 320, 0, true},
     {SIMPROCESS_EVENT, uartsimProcess, 0, 0, false},
-    {AUTOSTART_EVENT, autostartProcess, 20000, 0, true},
+//    {AUTOSTART_EVENT, autostartProcess, 20000, 0, true},
     };
 
 void readTemp();

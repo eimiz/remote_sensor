@@ -134,8 +134,8 @@ static void sendData() {
     uartSendLog(logbuf);
     eproCreateDataBuf(encbuffer, buffer, sizeof(buffer));
     uartsimSendBuf(encbuffer, sizeof(encbuffer));
-    delay(20);
-    uartsimSend(26);
+    const char CTRL_Z[] = {26, 0};
+    uartsimSendStr(CTRL_Z);
     //stationStopTask(&tempStreamTask);
 }
 
