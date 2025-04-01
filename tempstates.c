@@ -11,6 +11,7 @@
 #include "eprotocol.h"
 #include "tempstream.h"
 #include "station.h"
+#include "tokenize.h"
 
 #define ASIZE(x) (sizeof(x) / sizeof(x[0]))
 #define MIN(x,y) ((x) < (y)) ? (x) : (y)
@@ -24,6 +25,9 @@ static void commandConsumeNonceAndHash();
 static void commandSendClientHash();
 typedef void (*CommandFunc)();
 typedef enum {STATE_INIT, STATE_GPRS_INIT, STATE_CONNECTING, STATE_READY} ClState;
+char bigbuf[200];
+char *responseParts[10];
+
 typedef struct {
     CommandFunc comFunc;
     const char *command;
@@ -54,21 +58,19 @@ const SimCommand * const  ALL_COMMANDS[] = {&TEST_COMMAND, &WIRELESS_APN, &WIREL
  &SEND_COMMAND, &HELLO_MAGIC, &CONSUME_NONCEHASH_CMD,
  &SEND_COMMAND, &SEND_CLIENT_HASH_CMD };
 static int currentState = 0;
-uint8_t responseBuffer[200];
 static bool running = false;
 static void commandConsumeSentOk() {
     //buffer should contain Send OK
-    if (strcmp(responseBuffer, "SEND OK")) {
+    if (strcmp(responseParts[0], "SEND OK")) {
         uartSendLog("got SEND OK");
     } else {
         uartSendLog("Oh no, no SEND OK");
     }
-
 }
 
 static void commandConsumeNonceAndHash() {
     uartSendStr("\r\nProcessing nonce and hash\r\n");
-    EproRez rez = eproReadServerNonces(responseBuffer);
+    EproRez rez = eproReadServerNonces(responseParts[0]);
     uint8_t buf[32];
 
     if (rez != EPRO_OK) {
@@ -106,45 +108,18 @@ static void commandHelloMagic() {
 void tsParseResponse() {
     uartSendStr("Parsing response\r\n");
 
-    uint8_t buf[200];
-    int numread = cbufRead(&cbuf, buf, sizeof(buf));
 
-    buf[numread] = '\0';
-    uartSendStr("\r\nRaw buf:\r\n[");
-    uartSendStr(buf);
-    uartSendStr("]\r\n");
+    int numread = cbufRead(&cbuf, bigbuf, sizeof(bigbuf));
+
+    bigbuf[numread] = '\0';
+    uartSendLog("Raw buf:");
+    uartSendLog(bigbuf);
 
     if (numread <= 0) {
-        strcpy(buf, "wrong response");
+        strcpy(bigbuf, "wrong response");
     }
 
-    int index = numread - 1;
-    while (index >= 0) {
-        if (buf[index] == '\r') {
-            break;
-        }
-
-        index --;
-    }
-
-    int bcounter = 0;
-    while (index >0) {
-        if (buf[--index] == '\n') {
-            break;
-        }
-
-        responseBuffer[bcounter++] = buf[index];
-    }
-
-    //reverse:
-    for (int i = 0; i < bcounter / 2; i++) {
-        uint8_t tmp = responseBuffer[i];
-        responseBuffer[i] = responseBuffer[bcounter -i - 1];
-        responseBuffer[bcounter -i - 1] = tmp;
-    }
-
-    //end string
-    responseBuffer[bcounter] = '\0';
+    tokenize(responseParts, bigbuf);
 }
 
 void tsResetModemRestartStates() {
@@ -157,10 +132,8 @@ void tsResetModemRestartStates() {
 
 void tsProcessResponse() {
     tsParseResponse();
-    uartSendStr("\r\nrespBuf:\r\n[");
-    uartSendStr(responseBuffer);
-    uartSendStr("]\r\n");
-    if (strcmp(responseBuffer, "ERROR") != 0) {
+    uartSendLog(responseParts[0]);
+    if (strcmp(responseParts[0], "ERROR") != 0) {
         currentState = MIN(ASIZE(ALL_COMMANDS), currentState + 1);
     } else {
         tsResetModemRestartStates();
@@ -174,7 +147,7 @@ void tsProcessResponse() {
     if (currentState < ASIZE(ALL_COMMANDS)) {
         tsRunState();
     } else {
-        tempStreamProcess(responseBuffer);
+        tempStreamProcess(responseParts[0]);
     }
 }
 
