@@ -17,6 +17,7 @@
 #include "circbuf.h"
 #include "commands.h"
 #include "tempstates.h"
+#include "lcdlogs.h"
 
 
 #define RESETPIN 6
@@ -49,7 +50,6 @@ void dallasProc(void *t);
 void measureVoltage(void *t);
 void ledBlink(void *t);
 void ledBlink3(void *t);
-void lcdProcess(void *t);
 void autostartProcess(void *t);
 void simrxWatch(void *t);
 void uartsimProcess(void *t);
@@ -154,10 +154,12 @@ void uartsimProcess(void *p) {
    tsProcessResponse();
 }
 
-void lcdProcess(void *p) {
+void lcdSetup() {
     uartSendStr("lcd ");
     lcdInit(&lcd, 6, 7, 15, 14, 13, 9);
     delay(10);
+    storeChars();
+    delay(1);
 //    const char *txt = "Labas kaip einasi?";
 //    lcdWriteText(&lcd, txt, strlen(txt));
     
@@ -167,26 +169,22 @@ void lcdProcess(void *p) {
 
 void dallasProc(void *p) {
     if (tempstatus == 0) {
-        uartSendStr("lcdin ");
-        lcdProcess(p);
-        tempstatus = 1;
-    } else if (tempstatus == 1) {
         uartSendStr("stchr ");
         storeChars();
-        tempstatus = 2;
-    } else  if (tempstatus == 2) {
+        tempstatus = 1;
+    } else  if (tempstatus == 1) {
         uartSendStr("tmcfg ");
         wire1Config(&wire1);
-        tempstatus = 3; //should be 3
+        tempstatus = 2;
         lcdWriteText(&lcd, "Init", 4);
-    } else if (tempstatus == 3) {
+    } else if (tempstatus == 2) {
         uartSendStr("measr ");
         wire1MeasureTemp(&wire1);
-        tempstatus = 4;
-    } else if (tempstatus == 4) {
+        tempstatus = 3;
+    } else if (tempstatus == 3) {
         uartSendStr("readt ");
         readTemp();
-        tempstatus = 3;
+        tempstatus = 2;
     }
 }
 
@@ -287,6 +285,8 @@ void setup() {
   uartsimInit();
   tsInitTempStates();
   gpioOn(&GPIOA, RESETPIN);
+  lcdSetup();
+  lcdlogsInit(&lcd);
 }
 
 void dumpAscii() {
@@ -365,70 +365,13 @@ void measureTemp() {
     }
 }
 
-void formatTempr(char *buf, uint8_t h, uint8_t l) {
-    char *sign = "";
-    int16_t combined = (h << 8) | l;
-    if (combined < 0) {
-        combined = ~combined + 1;
-        sign = "-";
-        h = ((combined & 0xf00) >> 4) | ((combined & 0xf0) >> 4);
-        l = combined & 0x0f;
-    } else {
-        h = (h << 4) | (l  >> 4);
-        l = l & 0x0f;
-    }
-
-
-    int lbig = l * 625;
-    int lrem = lbig % 1000;
-    int lrnd = lbig / 1000;
-    if (lrem >= 500) {
-        lrnd += 1;
-    }
-
-    sprintf(buf, "%s%i.%01i", sign, h, lrnd);
-}
-
-void formatTemprOld(char *buf, uint8_t h, uint8_t l) {
-    int lbig = l * 625;
-    int lrem = lbig % 1000;
-    int lrnd = lbig / 1000;
-    if (lrem >= 500) {
-        lrnd += 1;
-    }
-
-    sprintf(buf, "%i.%01i", h, lrnd);
-}
-
 void readTemp() {
     char buf[40] = {0};
     char buft[20] = {0};
     if (wire1ReadTemp(&wire1) == WIRE1_OK) {
         uartSendStr("Read ok ");
         //sprintf(buf, "t=%f", wire1.tempr);
-        formatTempr(buft, wire1.tmain, wire1.tfrac);
-        sprintf(buf, "Tmp1=%s", buft);
-        uartSendStr(buf);
-        lcdHome(&lcd);
-        lcdWriteText(&lcd, buf, strlen(buf));
-        lcdWriteText(&lcd, (uint8_t[]){2, 'C'}, 2);
-        sprintf(buf, " %i", uart3Counter);
-        lcdWriteText(&lcd, buf, strlen(buf));
-
-        uartSendStr(buf);
-        uartSendStr(" ");
-    } else {
-        uartSendStr("Read er ");
-    }
-}
-
-void readAndSendTemp() {
-    char buf[40] = {0};
-    char buft[20] = {0};
-    if (wire1ReadTemp(&wire1) == WIRE1_OK) {
-        uartSendStr("Read ok ");
-        //sprintf(buf, "t=%f", wire1.tempr);
-        formatTempr(buft, wire1.tmain, wire1.tfrac);
+        eutilsFormatTempr(buft, wire1.tmain, wire1.tfrac);
         sprintf(buf, "Tmp1=%s", buft);
         uartSendStr(buf);
         lcdHome(&lcd);
@@ -491,7 +434,7 @@ void readRxData() {
 
         case 8:
 //            events |= 1 << LCD_EVENT;
-            lcdProcess(NULL);
+            lcdSetup();
             break;
         case 13:
             uint8_t tmpBuf[CIRC_BUF_SIZE];

@@ -98,3 +98,5 @@ int wire1Config(TWire1 *wire1) {
     sendByte(wire1, 0x7f);
     return WIRE1_OK;
 }
+
+

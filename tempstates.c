@@ -12,6 +12,7 @@
 #include "tempstream.h"
 #include "station.h"
 #include "tokenize.h"
+#include "lcdlogs.h"
 
 #define ASIZE(x) (sizeof(x) / sizeof(x[0]))
 #define MIN(x,y) ((x) < (y)) ? (x) : (y)
@@ -31,25 +32,24 @@ char *responseParts[10];
 typedef struct {
     CommandFunc comFunc;
     const char *command;
+    const char *log;
     const char *submitCommand;
 } SimCommand;
 const char * const ENDL = "\n";
 const char CTRL_Z[] = {26, 0};
-const SimCommand  TEST_COMMAND = {NULL, "AT", ENDL};
-const SimCommand  IDENT_COMMAND = {NULL, "ATI", ENDL};
-const SimCommand  FAKE_COMMAND = {NULL, "ATFFF", ENDL};
-const SimCommand  GPRS_ATTACH = {NULL, "AT+CGATT=1", ENDL};
-const SimCommand  WIRELESS_UP = {NULL, "AT+CIICR", ENDL};
-const SimCommand  WIRELESS_APN = {NULL, "AT+CSTT=\"ezys\"", ENDL};
-const SimCommand  IPADDR_COMMAND = {NULL, "AT+CIFSR", ENDL}; //returns only ip address, no OK. Mandatory, otherwise ciat+cipstart won't work
-const SimCommand  CONN_COMMAND = {NULL, "at+cipstart=\"TCP\",\"88.223.53.82\",\"44556\"", ENDL};
-const SimCommand  SEND_COMMAND = {NULL, "at+cipsend", ENDL};
-const SimCommand  TEXT_COMMAND = {NULL, "Info from sim800\r\n", CTRL_Z};
-const SimCommand  TEXT_COMMAND2 = {NULL, "Another Info from sim800!!\r\n", CTRL_Z};
-const SimCommand HELLO_MAGIC = {commandHelloMagic, NULL, CTRL_Z};
-const SimCommand CONSUME_SENTOK_CMD = {commandConsumeSentOk, NULL, NULL};
-const SimCommand CONSUME_NONCEHASH_CMD = {commandConsumeNonceAndHash, NULL, CTRL_Z};
-const SimCommand SEND_CLIENT_HASH_CMD = {commandSendClientHash, NULL, CTRL_Z};
+const SimCommand  TEST_COMMAND = {NULL, "AT", "Init", ENDL};
+const SimCommand  IDENT_COMMAND = {NULL, "ATI", NULL,  ENDL};
+const SimCommand  FAKE_COMMAND = {NULL, "ATFFF", NULL, ENDL};
+const SimCommand  GPRS_ATTACH = {NULL, "AT+CGATT=1", "Gprs UP", ENDL};
+const SimCommand  WIRELESS_UP = {NULL, "AT+CIICR", "Wireless up", ENDL};
+const SimCommand  WIRELESS_APN = {NULL, "AT+CSTT=\"ezys\"", "APN", ENDL};
+const SimCommand  IPADDR_COMMAND = {NULL, "AT+CIFSR", NULL, ENDL}; //returns only ip address, no OK. Mandatory, otherwise ciat+cipstart won't work
+const SimCommand  CONN_COMMAND = {NULL, "at+cipstart=\"TCP\",\"88.223.53.82\",\"44556\"", "Connecting", ENDL};
+const SimCommand  SEND_COMMAND = {NULL, "at+cipsend", NULL, ENDL};
+const SimCommand HELLO_MAGIC = {commandHelloMagic, NULL, "Hello magic", CTRL_Z};
+const SimCommand CONSUME_SENTOK_CMD = {commandConsumeSentOk, NULL, NULL, NULL};
+const SimCommand CONSUME_NONCEHASH_CMD = {commandConsumeNonceAndHash, NULL, "Parse nonce,hash", CTRL_Z};
+const SimCommand SEND_CLIENT_HASH_CMD = {commandSendClientHash, NULL, "Sending cl hash", CTRL_Z};
 
 
 static TBuf cbuf;
@@ -143,6 +143,7 @@ void tsProcessResponse() {
     char buf[8];
     uartSendStr("Current state is ");
     sprintf(buf, "%i", currentState);
+    uartSendLog("last token:");
     uartSendLog(buf);
     if (currentState < ASIZE(ALL_COMMANDS)) {
         tsRunState();
@@ -186,6 +187,10 @@ void tsRunState() {
     }
 
     const SimCommand *c = ALL_COMMANDS[currentState];
+    if (c->log != NULL) {
+        lcdlogsSet(LLOG_STATUS, c->log);
+    }
+
     if (c->comFunc != NULL) {
         c->comFunc();
     } else {

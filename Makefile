@@ -20,7 +20,7 @@ eprotocol.c: eprotocoltemp.c ../c/tempendpoint/ckey.bin
 	sed -i 's/$${chakey}/{$(shell hexdump  ../../c/tempendpoint/ckey.bin -e '"0x%x,"')}/g' eprotocol.c
 
 
-station.elf: udma.o station.o delay.o gpio.o stm32_startup.o uart.o eutils.o sysmem.o syscalls.o timer.o lcd.o wire1.o clock.o motion.o nvic.o uartsim.o commands.o ../../c/sim800client/circbuf.o tempstates.o eprotocol.o ../../c/base64/ebase64.o ../../c/chacha20/src/poly1305.o ../../c/chacha20/src/chacha.o tempstream.o ../../c/simparser/src/tokenize.c
+station.elf: udma.o station.o delay.o gpio.o stm32_startup.o uart.o eutils.o sysmem.o syscalls.o timer.o lcd.o wire1.o clock.o motion.o nvic.o uartsim.o commands.o lcdlogs.o ../../c/sim800client/circbuf.o tempstates.o eprotocol.o ../../c/base64/ebase64.o ../../c/chacha20/src/poly1305.o ../../c/chacha20/src/chacha.o tempstream.o ../../c/simparser/src/tokenize.c
 	$(CC) $(LDFLAGS) -o $@ $^
 
 .PHONY: clean

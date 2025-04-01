@@ -16,4 +16,5 @@ void lcdWriteData(TLcd *lcd, const uint8_t *data, int len, int rs);
 void lcdWriteText(TLcd *lcd, const uint8_t *data, int len);
 void lcdWriteRam(TLcd *lcd, const uint8_t addr, const uint8_t *data);
 void lcdHome(TLcd *lcd);
-
+void lcdWriteFirstRow(TLcd *lcd, const char *str);
+void lcdWriteSecondRow(TLcd *lcd, const char *str);

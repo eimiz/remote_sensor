@@ -1,9 +1,10 @@
+#include <string.h>
 #include "lcd.h"
 #include "gpio.h"
 #include "delay.h"
 #include "eutils.h"
-void lcdWriteNibble(TLcd *lcd, uint8_t data, int rs);
-void lcdWriteByte(TLcd *lcd, uint8_t data, int rs);
+static void lcdWriteNibble(TLcd *lcd, uint8_t data, int rs);
+static void lcdWriteByte(TLcd *lcd, uint8_t data, int rs);
 void lcdInit(TLcd *lcd, int rs, int clock, int d4, int d5, int d6, int d7) {
     lcd->pos = 0;
     lcd->line = 0;
@@ -60,12 +61,12 @@ void lcdClearDataPins(TLcd *lcd) {
     GPIOB.gpioRegs->ODR &= out;
 }
 
-void lcdWriteByte(TLcd *lcd, uint8_t data, int rs) {
+static void lcdWriteByte(TLcd *lcd, uint8_t data, int rs) {
     lcdWriteNibble(lcd, data >> 4, rs);
     lcdWriteNibble(lcd, data, rs);
 }
 
-void lcdWriteNibble(TLcd *lcd, uint8_t data, int rs) {
+static void lcdWriteNibble(TLcd *lcd, uint8_t data, int rs) {
     lcdClearDataPins(lcd);
     uint32_t out = lcd->clock;
     if (rs)  out |= lcd->rs;
@@ -121,3 +122,23 @@ void lcdWriteRam(TLcd *lcd, const uint8_t addr, const uint8_t *data) {
     lcdWriteData(lcd, (uint8_t[]){0b10000000}, 1, 0);
     delaymu(20);
 }
+
+static void lcdWriteRow(TLcd *lcd, const char *str, int row) {
+    lcdWriteData(lcd, (uint8_t[]){0b10000000 | (row << 6)}, 1, 0);
+    delay(1);
+    int toWrite = MIN(16, strlen(str));
+    lcdWriteData(lcd, str, toWrite, 1);
+    int remaining = 16 - toWrite;
+    for (int i = 0; i < remaining; i++) {
+        lcdWriteData(lcd, " ", 1, 1);
+    }
+}
+
+void lcdWriteFirstRow(TLcd *lcd, const char *str) {
+    lcdWriteRow(lcd, str, 0);
+}
+
+void lcdWriteSecondRow(TLcd *lcd, const char *str) {
+    lcdWriteRow(lcd, str, 1);
+}
+

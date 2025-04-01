@@ -7,7 +7,9 @@
 #include "eprotocol.h"
 #include "tempstates.h"
 #include "delay.h"
-
+#include "lcdlogs.h"
+#include "eutils.h"
+static int packetCounter = 0;
 static void tempStreamProc(void *task);
 static void tempMeasureProc(void *task);
 
@@ -28,6 +30,7 @@ static void tempStreamProc(void *task) {
 }
 
 static void tempStreamStart() {
+    lcdlogsSet(LLOG_STATUS, "Connected");
     tempState = MEASURE_STATE;
 
     uartSendLog("wire1 init");
@@ -126,10 +129,19 @@ static void readTemp() {
 }
 
 static void sendData() {
+
     uartSendLog("Sending data");
     uint8_t buffer[] = {wire1.tfrac, wire1.tmain, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18};
     uint8_t encbuffer[ENC_SIZE(NONCE_LEN +  CHA_COUNTER_LEN + sizeof(buffer) + HASH_LEN)];
     char logbuf[32];
+    eutilsFormatTempr(logbuf, wire1.tmain, wire1.tfrac);
+    strcat(logbuf,  (char[]){2, 'C', 0});
+    lcdlogsSet(LLOG_TMPR, logbuf);
+    packetCounter++;
+    sprintf(logbuf, "Packets sent:%i", packetCounter);
+    lcdlogsSet(LLOG_STATUS, logbuf);
+
+
     sprintf(logbuf, "encbuf len:%i, raw len: %i", sizeof(encbuffer), NONCE_LEN +  CHA_COUNTER_LEN + sizeof(buffer) + HASH_LEN);
     uartSendLog(logbuf);
     eproCreateDataBuf(encbuffer, buffer, sizeof(buffer));
