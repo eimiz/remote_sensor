@@ -46,12 +46,10 @@ void commandAnother() {
 void commandRunState() {
     if (!tsIsRunning()) {
         uartSendLog("Starting states");
-        tsInitTempStates();
-        tsSetRunning(true);
-        tsRunState();
+        tsStart();
     } else {
         uartSendLog("Stopping states");
-        tsSetRunning(false);
+        tsStop();
         tempStreamStop();
     }
 }

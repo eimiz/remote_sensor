@@ -18,6 +18,7 @@
 #include "commands.h"
 #include "tempstates.h"
 #include "lcdlogs.h"
+#include "modem.h"
 
 
 #define RESETPIN 6
@@ -74,7 +75,7 @@ Task tasks[] = {
     {TEMPR_EVENT, dallasProc, 1500, 0, true},
     {SIMPROCESS_EVENT, uartsimProcess, 0, 0, false},
 //    {AUTOSTART_EVENT, autostartProcess, 20000, 0, true},
-    };
+};
 
 void readTemp();
 int runningTasksCount = 0;
@@ -154,7 +155,7 @@ void simrxWatch(void *pt) {
 
 void uartsimProcess(void *p) {
    uartSendStr("[xrocess]");
-   tsProcessResponse();
+   modemProcessResponse();
 }
 
 void lcdSetup() {
@@ -395,7 +396,7 @@ void configTemp() {
 
 void readsimData() {
     uint8_t val = uartsimRead();
-    tsAddByte(val);
+    modemAddByte(val);
     uartEnableInt();
    // uartSendStr("**r");
 	if (!passThrough) {

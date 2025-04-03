@@ -5,6 +5,7 @@ void tsRunState();
 void tsInitTempStates();
 void tsProcessResponse();
 void tsAddByte(uint8_t b);
-void tsSetRunning(bool r);
+void tsStart();
+void tsStop();
 bool tsIsRunning();
 void tsResetModemRestartStates();

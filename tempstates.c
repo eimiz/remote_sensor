@@ -11,8 +11,9 @@
 #include "eprotocol.h"
 #include "tempstream.h"
 #include "station.h"
-#include "tokenize.h"
 #include "lcdlogs.h"
+#include "modem.h"
+#include "tokenize.h"
 
 #define ASIZE(x) (sizeof(x) / sizeof(x[0]))
 #define MIN(x,y) ((x) < (y)) ? (x) : (y)
@@ -26,8 +27,9 @@ static void commandConsumeNonceAndHash();
 static void commandSendClientHash();
 typedef void (*CommandFunc)();
 typedef enum {STATE_INIT, STATE_GPRS_INIT, STATE_CONNECTING, STATE_READY} ClState;
-char bigbuf[200];
-char *responseParts[10];
+
+
+extern char *modemResponseParts[TOKENIZE_MAX_PARTS];
 
 typedef struct {
     CommandFunc comFunc;
@@ -51,8 +53,6 @@ const SimCommand CONSUME_SENTOK_CMD = {commandConsumeSentOk, NULL, NULL, NULL};
 const SimCommand CONSUME_NONCEHASH_CMD = {commandConsumeNonceAndHash, NULL, "Parse nonce,hash", CTRL_Z};
 const SimCommand SEND_CLIENT_HASH_CMD = {commandSendClientHash, NULL, "Sending cl hash", CTRL_Z};
 
-
-static TBuf cbuf;
 //const SimCommand * const  ALL_COMMANDS[] = {&TEST_COMMAND, &WIRELESS_APN, &WIRELESS_UP, &IPADDR_COMMAND, &CONN_COMMAND, &SEND_COMMAND, &TEXT_COMMAND, &SEND_COMMAND, &TEXT_COMMAND2};
 const SimCommand * const  ALL_COMMANDS[] = {&TEST_COMMAND, &WIRELESS_APN, &WIRELESS_UP, &IPADDR_COMMAND, &CONN_COMMAND,
  &SEND_COMMAND, &HELLO_MAGIC, &CONSUME_NONCEHASH_CMD,
@@ -61,7 +61,7 @@ static int currentState = 0;
 static bool running = false;
 static void commandConsumeSentOk() {
     //buffer should contain Send OK
-    if (strcmp(responseParts[0], "SEND OK")) {
+    if (strcmp(modemResponseParts[0], "SEND OK")) {
         uartSendLog("got SEND OK");
     } else {
         uartSendLog("Oh no, no SEND OK");
@@ -70,7 +70,7 @@ static void commandConsumeSentOk() {
 
 static void commandConsumeNonceAndHash() {
     uartSendStr("\r\nProcessing nonce and hash\r\n");
-    EproRez rez = eproReadServerNonces(responseParts[0]);
+    EproRez rez = eproReadServerNonces(modemResponseParts[0]);
     uint8_t buf[32];
 
     if (rez != EPRO_OK) {
@@ -105,35 +105,17 @@ static void commandHelloMagic() {
 	uartSendStr(buf2);
 }
 
-void tsParseResponse() {
-    uartSendStr("Parsing response\r\n");
-
-
-    int numread = cbufRead(&cbuf, bigbuf, sizeof(bigbuf));
-
-    bigbuf[numread] = '\0';
-    uartSendLog("Raw buf:");
-    uartSendLog(bigbuf);
-
-    if (numread <= 0) {
-        strcpy(bigbuf, "wrong response");
-    }
-
-    tokenize(responseParts, bigbuf);
-}
-
 void tsResetModemRestartStates() {
-        uartSendLog("Received error, reseting modem");
-        stationResetModem();
-        delay(10000);
-        tsInitTempStates();
-        tsRunState();
+    uartSendLog("Received error, reseting modem");
+    stationResetModem();
+    delay(10000);
+    tsInitTempStates();
+    tsStart();
 }
 
 void tsProcessResponse() {
-    tsParseResponse();
-    uartSendLog(responseParts[0]);
-    if (strcmp(responseParts[0], "ERROR") != 0) {
+    uartSendLog(modemResponseParts[0]);
+    if (strcmp(modemResponseParts[0], "ERROR") != 0) {
         currentState = MIN(ASIZE(ALL_COMMANDS), currentState + 1);
     } else {
         tsResetModemRestartStates();
@@ -148,7 +130,8 @@ void tsProcessResponse() {
     if (currentState < ASIZE(ALL_COMMANDS)) {
         tsRunState();
     } else {
-        tempStreamProcess(responseParts[0]);
+        tsStop();
+        tempStreamProcess(modemResponseParts[0]);
     }
 }
 
@@ -157,13 +140,24 @@ static void uartWriteFunc(const SimCommand *c) {
     uartsimSendBuf(c->submitCommand, strlen(c->submitCommand));
 }
 
-void tsInitTempStates() {
-    cbufInit(&cbuf);
+static void resetBuf() {
+    modemReset();
     currentState = 0;
     tempStreamReset();
+}
+
+void tsInitTempStates() {
     //send something to modem to autoconfigure baud rate
     uartsimSendStr("AT");
     uartsimSendStr(ENDL);
+    delay(100);
+}
+
+void tsStart() {
+    resetBuf();
+    running = true;
+    modemLock(tsProcessResponse);
+    tsRunState();
 }
 
 static void execCommand (const SimCommand *c) {
@@ -173,8 +167,9 @@ static void execCommand (const SimCommand *c) {
     uartWriteFunc(c);
 }
 
-void tsSetRunning(bool r) {
-    running = r;
+void tsStop() {
+    running = false;
+    modemUnlock(tsProcessResponse);
 }
 
 bool tsIsRunning() {
@@ -198,6 +193,4 @@ void tsRunState() {
     }
 }
 
-void tsAddByte(uint8_t b) {
-    cbufWrite(&cbuf, &b, 1);
-}
+

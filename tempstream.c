@@ -9,6 +9,8 @@
 #include "delay.h"
 #include "lcdlogs.h"
 #include "eutils.h"
+#include "modem.h"
+
 static int packetCounter = 0;
 static void tempStreamProc(void *task);
 static void tempMeasureProc(void *task);
@@ -20,7 +22,7 @@ StreamState tempState;
 
 static void measureTemp();
 static void readTemp();
-static void sendData();
+static MODEM_STATUS sendData();
 static void sendCip();
 static TWire1 wire1;
 static void tempStreamProc(void *task) {
@@ -49,7 +51,8 @@ void tempStreamStop() {
     stationStopTask(&tempMeasureTask);
 }
 
-static void parseEndpointDataResponse(const uint8_t *responseBuffer) {
+static void parseEndpointDataResponse() {
+    const char *responseBuffer = modemGetPart(0);
     if (strcmp(responseBuffer, "ERROR") == 0) {
 
     }
@@ -57,23 +60,22 @@ static void parseEndpointDataResponse(const uint8_t *responseBuffer) {
     uartSendLog("Checking response");
     if (eproCheckResponse(responseBuffer)) {
         uartSendLog("Reset modem from tempstream");
+        tempStreamStop();
+        modemUnlock(parseEndpointDataResponse);
         tsResetModemRestartStates();
-        stationResetModem();
         return;
     }
 
     stationPostponeTask(&tempStreamTask, tempStreamTask.period);
     tempState = MEASURE_STATE;
+    modemUnlock(parseEndpointDataResponse);
 }
 
-void tempStreamProcess(const uint8_t *responseBuffer) {
+void tempStreamProcess() {
     uartSendLog("tempStreamProcess");
     switch (tempState) {
         case INIT_STATE:
             tempStreamStart();
-            break;
-        case PARSE_ENDPOINT_RESPONSE_STATE:
-            parseEndpointDataResponse(responseBuffer);
             break;
         default:
     }
@@ -98,9 +100,11 @@ static void tempMeasureProc(void *task) {
             tempState = SEND_STATE;
             break;
        case SEND_STATE:
-            sendData();
-            stationStopTask((Task*)task);
-            tempState = PARSE_ENDPOINT_RESPONSE_STATE;
+            uartSendLog("***Send state");
+            if (!sendData()) {
+                stationStopTask((Task*)task);
+                tempState = MEASURE_STATE;
+            }
        default:
     }
 }
@@ -127,8 +131,7 @@ static void readTemp() {
     uartSendLog("Tempr read ok");
 }
 
-static void sendData() {
-
+static MODEM_STATUS sendData() {
     uartSendLog("Sending data");
     uint8_t buffer[] = {wire1.tfrac, wire1.tmain, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18};
     uint8_t encbuffer[ENC_SIZE(NONCE_LEN +  CHA_COUNTER_LEN + sizeof(buffer) + HASH_LEN)];
@@ -137,14 +140,15 @@ static void sendData() {
     sprintf(logbuf, "Packets sent:%i", packetCounter);
     lcdlogsSet(LLOG_STATUS, logbuf);
 
-
     sprintf(logbuf, "encbuf len:%i, raw len: %i", sizeof(encbuffer), NONCE_LEN +  CHA_COUNTER_LEN + sizeof(buffer) + HASH_LEN);
     uartSendLog(logbuf);
     eproCreateDataBuf(encbuffer, buffer, sizeof(buffer));
-    uartsimSendBuf(encbuffer, sizeof(encbuffer));
-    const char CTRL_Z[] = {26, 0};
-    uartsimSendStr(CTRL_Z);
+    MODEM_STATUS modemStatus = modemLock(parseEndpointDataResponse);
+    if (modemStatus == MODEM_OK) {
+        uartsimSendBuf(encbuffer, sizeof(encbuffer));
+        const char CTRL_Z[] = {26, 0};
+        uartsimSendStr(CTRL_Z);
+    }
+
+    return modemStatus;
 }
-
-
-
