@@ -138,7 +138,7 @@ static MODEM_STATUS sendData() {
     uint8_t encbuffer[ENC_SIZE(NONCE_LEN +  CHA_COUNTER_LEN + sizeof(buffer) + HASH_LEN)];
     char logbuf[32];
     packetCounter++;
-    sprintf(logbuf, "Packets sent:%i", packetCounter);
+    sprintf(logbuf, "P:%i, rst:%i", packetCounter, tsResetCounter());
     lcdlogsSet(LLOG_STATUS, logbuf);
 
     sprintf(logbuf, "encbuf len:%i, raw len: %i", sizeof(encbuffer), NONCE_LEN +  CHA_COUNTER_LEN + sizeof(buffer) + HASH_LEN);

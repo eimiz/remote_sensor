@@ -9,3 +9,4 @@ void tsStart();
 void tsStop();
 bool tsIsRunning();
 void tsResetModemRestartStates();
+int tsResetCounter();

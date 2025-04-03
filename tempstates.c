@@ -59,7 +59,9 @@ const SimCommand * const  ALL_COMMANDS[] = {&TEST_COMMAND, &WIRELESS_APN, &WIREL
  &SEND_COMMAND, &SEND_CLIENT_HASH_CMD };
 static int currentState = 0;
 static bool running = false;
+static int resetCounter = 0;
 static void commandConsumeSentOk() {
+
     //buffer should contain Send OK
     if (strcmp(modemResponseParts[0], "SEND OK")) {
         uartSendLog("got SEND OK");
@@ -105,7 +107,12 @@ static void commandHelloMagic() {
 	uartSendStr(buf2);
 }
 
+int tsResetCounter() {
+    return resetCounter;
+}
+
 void tsResetModemRestartStates() {
+    resetCounter++;
     uartSendLog("Received error, reseting modem");
     stationResetModem();
     delay(10000);
