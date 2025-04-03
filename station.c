@@ -245,14 +245,13 @@ void USART3_IRQHandler() {
     modemAddByte(val);
     simDataReceived = true;
     simWatchByteReceived = true;
-    uartsimDisableInt();
-    //timerDisableInt();
+   // uartsimDisableInt();
     uart3Counter++;
     if (UART3->SR & (1 << 3)) {
         oreCounter++;
     }
 
-    uartsimEnableInt();
+   // uartsimEnableInt();
 }
 
 void EXTI15_10_IRQHandler() {
