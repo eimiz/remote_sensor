@@ -64,13 +64,14 @@ int tempstatus = 0;
 
 Task simrxWatchTask = {SIMRX_WATCH_EVENT, simrxWatch, 0, 0, false};
 Task blink1Task = {BLINK_EVENT, ledBlink, 500, 0, true};
-Task dallasTask = {TEMPR_EVENT, dallasProc, 1500, 0, true};
+//Task dallasTask = {TEMPR_EVENT, dallasProc, 1500, 0, true};
 
 Task tasks[] = {
 //    {TEMPR_EVENT, dallasProc, 1500, 0},
 //    {MOTION_EVENT, measureVoltage, 6300, 0},
 
     {BLINK3_EVENT, ledBlink3, 320, 0, true},
+    {TEMPR_EVENT, dallasProc, 1500, 0, true},
     {SIMPROCESS_EVENT, uartsimProcess, 0, 0, false},
 //    {AUTOSTART_EVENT, autostartProcess, 20000, 0, true},
     };
@@ -126,11 +127,13 @@ void stationStopTask(Task *task) {
 }
 
 void stationDallas() {
+/*
 	if (isTaskRegistered(&dallasTask) && dallasTask.active) {
         stationStopTask(&dallasTask);
     } else  {
         stationStartTask(&dallasTask);
     } 
+*/
 }
 
 void simrxWatch(void *pt) {
@@ -300,13 +303,6 @@ void dumpAscii() {
         uartSendStr(buf);
 }
 
-void writeDegrees() {
-        const uint8_t buf[] = "Dabar 9";
-        lcdWriteText(&lcd, buf, sizeof(buf)-1);
-        lcdWriteText(&lcd, (uint8_t[]){(uint8_t)223}, 1);
-        lcdWriteText(&lcd, (uint8_t[]){(uint8_t)'C'}, 1);
-}
-
 void storeChars() {
     const uint8_t she[] = {
         0b00001010,
@@ -369,19 +365,21 @@ void readTemp() {
     char buf[40] = {0};
     char buft[20] = {0};
     if (wire1ReadTemp(&wire1) == WIRE1_OK) {
-        uartSendStr("Read ok ");
+//        uartSendStr("Read ok ");
         //sprintf(buf, "t=%f", wire1.tempr);
         eutilsFormatTempr(buft, wire1.tmain, wire1.tfrac);
-        sprintf(buf, "Tmp1=%s", buft);
-        uartSendStr(buf);
-        lcdHome(&lcd);
-        lcdWriteText(&lcd, buf, strlen(buf));
-        lcdWriteText(&lcd, (uint8_t[]){2, 'C'}, 2);
+//        sprintf(buf, "Tmp1=%s", buft);
+//        uartSendLog(buf);
+        strcat(buft, (char[]){2, 'C', 0});
+        lcdlogsSet(LLOG_TMPR, buft);
+
+/*
         sprintf(buf, " %i", uart3Counter);
         lcdWriteText(&lcd, buf, strlen(buf));
 
         uartSendStr(buf);
         uartSendStr(" ");
+*/
     } else {
         uartSendStr("Read er ");
     }

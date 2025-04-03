@@ -32,7 +32,6 @@ static void tempStreamProc(void *task) {
 static void tempStreamStart() {
     lcdlogsSet(LLOG_STATUS, "Connected");
     tempState = MEASURE_STATE;
-
     uartSendLog("wire1 init");
     wire1Init(&wire1, &GPIOA, WIRE_PIN);
     uartSendLog("wire1 config");
@@ -134,9 +133,6 @@ static void sendData() {
     uint8_t buffer[] = {wire1.tfrac, wire1.tmain, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18};
     uint8_t encbuffer[ENC_SIZE(NONCE_LEN +  CHA_COUNTER_LEN + sizeof(buffer) + HASH_LEN)];
     char logbuf[32];
-    eutilsFormatTempr(logbuf, wire1.tmain, wire1.tfrac);
-    strcat(logbuf,  (char[]){2, 'C', 0});
-    lcdlogsSet(LLOG_TMPR, logbuf);
     packetCounter++;
     sprintf(logbuf, "Packets sent:%i", packetCounter);
     lcdlogsSet(LLOG_STATUS, logbuf);
@@ -148,7 +144,6 @@ static void sendData() {
     uartsimSendBuf(encbuffer, sizeof(encbuffer));
     const char CTRL_Z[] = {26, 0};
     uartsimSendStr(CTRL_Z);
-    //stationStopTask(&tempStreamTask);
 }
 
 
