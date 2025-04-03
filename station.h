@@ -17,3 +17,4 @@ void stationStartTask(Task *task);
 void stationStopTask(Task *task);
 void stationPostponeTask(Task *task, uint32_t period);
 void stationResetModem();
+void stationReportUartStats();

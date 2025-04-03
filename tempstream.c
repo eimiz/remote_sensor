@@ -57,6 +57,7 @@ static void parseEndpointDataResponse() {
 
     }
 
+    stationReportUartStats();
     uartSendLog("Checking response");
     if (eproCheckResponse(responseBuffer)) {
         uartSendLog("Reset modem from tempstream");

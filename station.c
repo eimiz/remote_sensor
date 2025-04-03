@@ -404,6 +404,13 @@ void readsimData() {
 	}
 }
 
+void stationReportUartStats() {
+    char buf[128];
+    sprintf(buf, "sim overr: %i, txcnt: %i", oreCounter, uart3Counter);
+    uartSendLog(buf);
+}
+
+
 void commandPassThrough() {
     passThrough = !passThrough;
 	if (passThrough)
