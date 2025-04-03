@@ -25,7 +25,7 @@
 #define BLINKPIN3 12
 uint8_t buffer[200] = {"Pradzia! "};
 uint8_t rxbuffer[3] = {"***"};
-
+//int annCnt = 0;
 uint16_t bpos = 0;
 static bool receivedData = false;
 static bool simDataReceived = false;
@@ -68,7 +68,6 @@ Task blink1Task = {BLINK_EVENT, ledBlink, 500, 0, true};
 //Task dallasTask = {TEMPR_EVENT, dallasProc, 1500, 0, true};
 
 Task tasks[] = {
-//    {TEMPR_EVENT, dallasProc, 1500, 0},
 //    {MOTION_EVENT, measureVoltage, 6300, 0},
 
     {BLINK3_EVENT, ledBlink3, 320, 0, true},
@@ -172,6 +171,10 @@ void lcdSetup() {
 }
 
 void dallasProc(void *p) {
+/*    sprintf(buf, "This is annoying text %i", annCnt++);
+    uartSendLog(buf);
+    return;
+    */
     if (tempstatus == 0) {
         uartSendStr("stchr ");
         storeChars();
@@ -182,11 +185,11 @@ void dallasProc(void *p) {
         tempstatus = 2;
         lcdWriteText(&lcd, "Init", 4);
     } else if (tempstatus == 2) {
-        uartSendStr("measr ");
+//        uartSendStr("measr ");
         wire1MeasureTemp(&wire1);
         tempstatus = 3;
     } else if (tempstatus == 3) {
-        uartSendStr("readt ");
+//        uartSendStr("readt ");
         readTemp();
         tempstatus = 2;
     }
@@ -238,6 +241,8 @@ void USART2_IRQHandler() {
 }
 
 void USART3_IRQHandler() {
+    uint8_t val = uartsimRead();
+    modemAddByte(val);
     simDataReceived = true;
     simWatchByteReceived = true;
     uartsimDisableInt();
@@ -246,6 +251,8 @@ void USART3_IRQHandler() {
     if (UART3->SR & (1 << 3)) {
         oreCounter++;
     }
+
+    uartsimEnableInt();
 }
 
 void EXTI15_10_IRQHandler() {
@@ -395,9 +402,7 @@ void configTemp() {
 }
 
 void readsimData() {
-    uint8_t val = uartsimRead();
-    modemAddByte(val);
-    uartEnableInt();
+
    // uartSendStr("**r");
 	if (!passThrough) {
 	    stationPostponeTask(&simrxWatchTask, 1200);
@@ -406,7 +411,7 @@ void readsimData() {
 
 void stationReportUartStats() {
     char buf[128];
-    sprintf(buf, "sim overr: %i, txcnt: %i", oreCounter, uart3Counter);
+    sprintf(buf, "sim overr: %i, txcnt: %i u2cnt: %i dma: %i", oreCounter, uart3Counter, uart2Counter, dmaIntCounter);
     uartSendLog(buf);
 }
 
@@ -516,7 +521,7 @@ void loop() {
         readsimData();
        // timerDisableInt();
         simDataReceived = false;
-        uartsimEnableInt();
+       // uartsimEnableInt();
     }
 
   checkEvents();
