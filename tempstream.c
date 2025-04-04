@@ -14,16 +14,17 @@
 static int packetCounter = 0;
 static void tempStreamProc(void *task);
 static void tempMeasureProc(void *task);
+static void parseEndpointDataResponse();
 
-Task tempStreamTask = {TEMPR_STREAM_EVENT, tempStreamProc, 20000, 0, true};
+Task tempStreamTask = {TEMPR_STREAM_EVENT, tempStreamProc, 120000, 0, true};
 Task tempMeasureTask = {TEMPR_MEASURE_EVENT, tempMeasureProc, 1500, 0, true};
 typedef enum {INIT_STATE, MEASURE_STATE, READ_STATE, CIP_STATE, SEND_STATE, PARSE_ENDPOINT_RESPONSE_STATE} StreamState;
 StreamState tempState;
 
 static void measureTemp();
 static void readTemp();
-static MODEM_STATUS sendData();
-static void sendCip();
+static void sendData();
+static MODEM_STATUS sendCip();
 static TWire1 wire1;
 static void tempStreamProc(void *task) {
     stationStopTask(task);
@@ -51,19 +52,31 @@ void tempStreamStop() {
     stationStopTask(&tempMeasureTask);
 }
 
+static void tempStreamAbort() {
+    uartSendLog("Reset modem from tempstream");
+    tempStreamStop();
+    modemUnlock(parseEndpointDataResponse);
+    tsResetModemRestartStates();
+}
+
+
 static void parseEndpointDataResponse() {
     const char *responseBuffer = modemGetPart(0);
-    if (strcmp(responseBuffer, "ERROR") == 0) {
+    if (strlen(responseBuffer) == 0) {
+        uartSendLog("Empty respoinse when expecting > or endpoint data");
+        tempStreamAbort();
+        return;
+    }
 
+    if (responseBuffer[0] == '>') {
+        uartSendLog("Cip prompt found, ok");
+        return;
     }
 
     stationReportUartStats();
     uartSendLog("Checking response");
     if (eproCheckResponse(responseBuffer)) {
-        uartSendLog("Reset modem from tempstream");
-        tempStreamStop();
-        modemUnlock(parseEndpointDataResponse);
-        tsResetModemRestartStates();
+        tempStreamAbort();
         return;
     }
 
@@ -97,22 +110,29 @@ static void tempMeasureProc(void *task) {
             tempState = CIP_STATE;
             break;
        case CIP_STATE:
-            sendCip();
-            tempState = SEND_STATE;
+            if (!sendCip()) {
+                tempState = SEND_STATE;
+            }
             break;
        case SEND_STATE:
             uartSendLog("***Send state");
-            if (!sendData()) {
-                stationStopTask((Task*)task);
-                tempState = MEASURE_STATE;
-            }
+            sendData();
+            stationStopTask((Task*)task);
+            tempState = MEASURE_STATE;
        default:
     }
 }
 
-static void sendCip() {
-    uartSendLog("Sending cip");
-    uartsimSendStr("at+cipsend\n");
+static MODEM_STATUS sendCip() {
+    MODEM_STATUS modemStatus = modemLock(parseEndpointDataResponse);
+    if (modemStatus == MODEM_OK) {
+        uartSendLog("Sending cip");
+        uartsimSendStr("at+cipsend\n");
+    } else {
+        uartSendLog("Modem locked, no CIP");
+    }
+
+    return modemStatus;
 }
 
 static void measureTemp() {
@@ -132,24 +152,20 @@ static void readTemp() {
     uartSendLog("Tempr read ok");
 }
 
-static MODEM_STATUS sendData() {
+static void sendData() {
     uartSendLog("Sending data");
     uint8_t buffer[] = {wire1.tfrac, wire1.tmain, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18};
     uint8_t encbuffer[ENC_SIZE(NONCE_LEN +  CHA_COUNTER_LEN + sizeof(buffer) + HASH_LEN)];
     char logbuf[32];
-    packetCounter++;
+
     sprintf(logbuf, "P:%i, rst:%i", packetCounter, tsResetCounter());
     lcdlogsSet(LLOG_STATUS, logbuf);
 
     sprintf(logbuf, "encbuf len:%i, raw len: %i", sizeof(encbuffer), NONCE_LEN +  CHA_COUNTER_LEN + sizeof(buffer) + HASH_LEN);
     uartSendLog(logbuf);
     eproCreateDataBuf(encbuffer, buffer, sizeof(buffer));
-    MODEM_STATUS modemStatus = modemLock(parseEndpointDataResponse);
-    if (modemStatus == MODEM_OK) {
-        uartsimSendBuf(encbuffer, sizeof(encbuffer));
-        const char CTRL_Z[] = {26, 0};
-        uartsimSendStr(CTRL_Z);
-    }
-
-    return modemStatus;
+    uartsimSendBuf(encbuffer, sizeof(encbuffer));
+    const char CTRL_Z[] = {26, 0};
+    uartsimSendStr(CTRL_Z);
+    packetCounter++;
 }
