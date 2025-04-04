@@ -1,5 +1,7 @@
 #pragma once
 #include <stdint.h>
+#define LCD_ANTENNA_CHR 3
+#define LCD_ZHE_CHR 1
 typedef struct {
     int pos; //position of cursor
     int line; //current line
@@ -18,3 +20,4 @@ void lcdWriteRam(TLcd *lcd, const uint8_t addr, const uint8_t *data);
 void lcdHome(TLcd *lcd);
 void lcdWriteFirstRow(TLcd *lcd, const char *str);
 void lcdWriteSecondRow(TLcd *lcd, const char *str);
+void lcdStoreChars(TLcd *lcd);

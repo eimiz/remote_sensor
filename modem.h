@@ -8,3 +8,4 @@ MODEM_STATUS modemUnlock(ModemParserFunc func);
 void modemAddByte(uint8_t b);
 void modemReset();
 char *modemGetPart(int index);
+int modemPartsCount();

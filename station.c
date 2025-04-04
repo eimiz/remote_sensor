@@ -19,6 +19,7 @@
 #include "tempstates.h"
 #include "lcdlogs.h"
 #include "modem.h"
+#include "tokenize.h"
 
 
 #define RESETPIN 6
@@ -54,10 +55,8 @@ void ledBlink3(void *t);
 void autostartProcess(void *t);
 void simrxWatch(void *t);
 void uartsimProcess(void *t);
-
-
-void storeChars();
-
+static void linkQualityProcess(void *t);
+static void serviceProviderProcess(void *t);
 
 
 uint32_t ticks = 0;
@@ -65,6 +64,7 @@ int tempstatus = 0;
 
 Task simrxWatchTask = {SIMRX_WATCH_EVENT, simrxWatch, 0, 0, false};
 Task blink1Task = {BLINK_EVENT, ledBlink, 500, 0, true};
+Task serviceProviderTask = {SERVICE_PROVIDER_EVENT, serviceProviderProcess, 15000, 0, true};
 //Task dallasTask = {TEMPR_EVENT, dallasProc, 1500, 0, true};
 
 Task tasks[] = {
@@ -73,6 +73,8 @@ Task tasks[] = {
     {BLINK3_EVENT, ledBlink3, 320, 0, true},
     {TEMPR_EVENT, dallasProc, 1500, 0, true},
     {SIMPROCESS_EVENT, uartsimProcess, 0, 0, false},
+
+    {LINK_QUALITY_EVENT, linkQualityProcess, 10000, 0, true},
 //    {AUTOSTART_EVENT, autostartProcess, 20000, 0, true},
 };
 
@@ -85,6 +87,84 @@ void stationPostponeTask(Task *task, uint32_t period) {
     task->period = period;
     task->active = true;
 }
+
+static void serviceProviderParser() {
+    uartSendLog("Service provider parser");
+    int pcnt = modemPartsCount();
+    char buf[128];
+    
+    if (pcnt < 3) {
+        sprintf(buf, "srv parts count: %i less than 3", pcnt);
+        uartSendLog(buf);
+        modemUnlock(serviceProviderParser);
+        return;
+    }
+
+    const char *srvstr = modemGetPart(1);
+    sprintf(buf, "csqstr is [%s]", srvstr);
+    uartSendLog(buf);
+    char *parts[TOKENIZE_MAX_PARTS];
+    int partsCount = tokenize2(parts, srvstr, "\"");
+    if (partsCount != 3) {
+        sprintf(buf, "srv provider parts count: %i not equal to 3", partsCount);
+        modemUnlock(serviceProviderParser);
+        return;
+    }
+
+    lcdlogsSet(LLOG_SERVICE_PROVIDER, parts[1]);
+    sprintf(buf, "service provider is [%s]\n", parts[1]);
+    uartSendLog(buf);
+    modemUnlock(serviceProviderParser);
+    stationStopTask(&serviceProviderTask);
+}
+
+static void linkQualityParser() {
+    uartSendLog("quality parser");
+    int pcnt = modemPartsCount();
+    char buf[128];
+    
+    if (pcnt < 3) {
+        sprintf(buf, "parts count: %i less than 3", pcnt);
+        uartSendLog(buf);
+        modemUnlock(linkQualityParser);
+        return;
+    }
+
+    const char *csqstr = modemGetPart(1);
+    sprintf(buf, "csqstr is [%s]", csqstr);
+    uartSendLog(buf);
+    char *parts[TOKENIZE_MAX_PARTS];
+    int csqPartsCount = tokenize2(parts, csqstr, " ,");
+    if (csqPartsCount != 3) {
+        sprintf(buf, "csq parts count: %i not equal to 3", csqPartsCount);
+        modemUnlock(linkQualityParser);
+        return;
+    }
+
+    lcdlogsSet(LLOG_LINK_QUALITY, parts[1]);
+    sprintf(buf, "csq quality is [%s]\n", parts[1]);
+    uartSendLog(buf);
+    modemUnlock(linkQualityParser);
+}
+
+static void serviceProviderProcess(void *t) {
+    uartSendLog("Service provider process");
+    if (modemLock(serviceProviderParser) != MODEM_OK) {
+        return;
+    }
+
+    uartsimSendStr("at+cspn?\n");
+}
+
+static void linkQualityProcess(void *t) {
+    uartSendLog("quality process");
+    if (modemLock(linkQualityParser) != MODEM_OK) {
+        return;
+    }
+
+    uartsimSendStr("at+csq\n");
+}
+
 
 void autostartProcess(void *t) {
     commandExec("states");
@@ -161,7 +241,7 @@ void lcdSetup() {
     uartSendStr("lcd ");
     lcdInit(&lcd, 6, 7, 15, 14, 13, 9);
     delay(10);
-    storeChars();
+    lcdStoreChars(&lcd);
     delay(1);
 //    const char *txt = "Labas kaip einasi?";
 //    lcdWriteText(&lcd, txt, strlen(txt));
@@ -176,22 +256,18 @@ void dallasProc(void *p) {
     return;
     */
     if (tempstatus == 0) {
-        uartSendStr("stchr ");
-        storeChars();
-        tempstatus = 1;
-    } else  if (tempstatus == 1) {
         uartSendStr("tmcfg ");
         wire1Config(&wire1);
-        tempstatus = 2;
+        tempstatus = 1;
         lcdWriteText(&lcd, "Init", 4);
-    } else if (tempstatus == 2) {
+    } else if (tempstatus == 1) {
 //        uartSendStr("measr ");
         wire1MeasureTemp(&wire1);
-        tempstatus = 3;
-    } else if (tempstatus == 3) {
+        tempstatus = 2;
+    } else if (tempstatus == 2) {
 //        uartSendStr("readt ");
         readTemp();
-        tempstatus = 2;
+        tempstatus = 1;
     }
 }
 
@@ -261,7 +337,6 @@ void EXTI15_10_IRQHandler() {
     motionClearInt();
 }
 
-
 void DMA1_Channel6_IRQHandler() {
     clearDmaIntFlag();
     dmaIntCounter++;
@@ -308,48 +383,6 @@ void dumpAscii() {
         char buf[13]={0};
         sprintf(buf, "[%i - %i] ", charPos - 32, charPos);
         uartSendStr(buf);
-}
-
-void storeChars() {
-    const uint8_t she[] = {
-        0b00001010,
-        0b00000100,
-        0b00001111,
-        0b00010000,
-        0b00001100,
-        0b00000010,
-        0b00000001,
-        0b00011110
-    };
-
-    const uint8_t zhe[] = {
-        0b00001010,
-        0b00000100,
-        0b00011111,
-        0b00000001,
-        0b00000110,
-        0b00001000,
-        0b00010000,
-        0b00011111
-    };
-
-    const uint8_t deg[] = {
-        0b00000111,
-        0b00000101,
-        0b00000111,
-        0b00000000,
-        0b00000000,
-        0b00000000,
-        0b00000000,
-        0b00000000
-    };
-
-
-    lcdWriteRam(&lcd, 0, she);
-    delay(1);
-    lcdWriteRam(&lcd, 1, zhe);
-    delay(1);
-    lcdWriteRam(&lcd, 2, deg);
 }
 
 void checkTempPresent() {
@@ -570,6 +603,7 @@ int main(void) {
 
   stationRegisterTask(&simrxWatchTask);
   stationRegisterTask(&blink1Task);
+  stationRegisterTask(&serviceProviderTask);
 //  fillBufferWithRegs();
   for(;;) {
     loop();

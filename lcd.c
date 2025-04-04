@@ -3,6 +3,52 @@
 #include "gpio.h"
 #include "delay.h"
 #include "eutils.h"
+const uint8_t she[] = {
+    0b00001010,
+    0b00000100,
+    0b00001111,
+    0b00010000,
+    0b00001100,
+    0b00000010,
+    0b00000001,
+    0b00011110
+};
+
+const uint8_t zhe[] = {
+    0b00001010,
+    0b00000100,
+    0b00011111,
+    0b00000001,
+    0b00000110,
+    0b00001000,
+    0b00010000,
+    0b00011111
+};
+
+const uint8_t deg[] = {
+    0b00000111,
+    0b00000101,
+    0b00000111,
+    0b00000000,
+    0b00000000,
+    0b00000000,
+    0b00000000,
+    0b00000000
+};
+
+
+const uint8_t antenna[] = {
+    0b00001110,
+    0b00010001,
+    0b00000000,
+    0b00000100,
+    0b00001010,
+    0b00000000,
+    0b00000000,
+    0b00000100
+};
+
+
 static void lcdWriteNibble(TLcd *lcd, uint8_t data, int rs);
 static void lcdWriteByte(TLcd *lcd, uint8_t data, int rs);
 void lcdInit(TLcd *lcd, int rs, int clock, int d4, int d5, int d6, int d7) {
@@ -142,3 +188,13 @@ void lcdWriteSecondRow(TLcd *lcd, const char *str) {
     lcdWriteRow(lcd, str, 1);
 }
 
+
+void lcdStoreChars(TLcd *lcd) {
+    lcdWriteRam(lcd, 0, she);
+    delay(1);
+    lcdWriteRam(lcd, 1, zhe);
+    delay(1);
+    lcdWriteRam(lcd, 2, deg);
+    delay(1);
+    lcdWriteRam(lcd, 3, antenna);
+}

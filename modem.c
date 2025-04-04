@@ -9,9 +9,14 @@ static void defaultParser();
 static ModemParserFunc currentParser = defaultParser;
 static bool locked = false;
 static char bigbuf[200];
+static int partsCount = 0;
 char *modemResponseParts[TOKENIZE_MAX_PARTS];
 char *modemGetPart(int index) {
     return modemResponseParts[index];
+}
+
+int modemPartsCount() {
+    return partsCount;
 }
 
 MODEM_STATUS modemLock(ModemParserFunc func) {
@@ -64,7 +69,7 @@ static void modemParseResponse() {
         strcpy(bigbuf, "wrong response");
     }
 
-    tokenize(modemResponseParts, bigbuf);
+    partsCount = tokenize(modemResponseParts, bigbuf);
 }
 
 void modemProcessResponse() {
