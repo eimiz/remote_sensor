@@ -14,6 +14,7 @@ void gpioEnableClock(GPIO_Type *gpio) {
 void gpioEnable(GPIO_Type *gpio, uint8_t pin, GpioDirection dir) {
     uint8_t cnf;
     uint8_t mode;
+    uint32_t out;
     switch (dir) {
         case GPIO_IN:
             mode = 0;
@@ -30,6 +31,11 @@ void gpioEnable(GPIO_Type *gpio, uint8_t pin, GpioDirection dir) {
         case GPIO_IN_PUP:
             mode = 0;
             cnf = 0b10;
+            uint32_t *pGPIO_ODR = (uint32_t *)(&(gpio->gpioRegs->ODR));
+            out = *pGPIO_ODR;
+            out &= ~(1 << pin);
+            out |= 1 << pin;
+            *pGPIO_ODR = out;
             break;
         default:
     }
@@ -42,7 +48,7 @@ void gpioEnable(GPIO_Type *gpio, uint8_t pin, GpioDirection dir) {
     uint32_t *pGPIOC_CR = (uint32_t *)(&(gpio->gpioRegs->CRL) + (pin / 8) );
 
     // CRH: Set to 00: General purpose output push-pull
-    uint32_t out = *pGPIOC_CR;
+    out = *pGPIOC_CR;
     out &= ~( 0b11 << cnf_bp );  // clear bits
     out |= ( cnf << cnf_bp );  // clear bits
 
@@ -51,14 +57,6 @@ void gpioEnable(GPIO_Type *gpio, uint8_t pin, GpioDirection dir) {
     out &= ~( 0b11 << mode_bp );  // clear bits
     out |= ( mode << mode_bp );   // set the new value
     *pGPIOC_CR = out;
-
-    if (dir == GPIO_IN_PUP) {
-        uint32_t *pGPIO_ODR = (uint32_t *)(&(gpio->gpioRegs->ODR));
-        out = *pGPIO_ODR;
-        out &= ~(1 << pin);
-        out |= 1 << pin;
-        *pGPIO_ODR = out;
-    }
 }
 
 void gpioOff(GPIO_Type *gpio, uint8_t pin) {
