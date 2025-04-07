@@ -5,3 +5,4 @@ LLOG_PACKETS_SENT, LLOG_RESTART_COUNT, LLOG_LAST} LcdLogKey;
 void lcdlogsSet(LcdLogKey key, const char *log);
 void lcdlogsRefresh();
 void lcdlogsInit(TLcd *plcd);
+void lcdlogsNext();

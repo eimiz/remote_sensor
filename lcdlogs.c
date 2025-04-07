@@ -4,6 +4,7 @@
 #include "lcdlogs.h"
 #include "uart.h"
 #define MIN_REFRESH_INTERVAL 1000
+#define MAX_PAGES 3
 static char lcdLogs[LLOG_LAST][17] = { 0 };
 static int currentPage = 0;
 static TLcd *lcd;
@@ -53,10 +54,14 @@ static const char * formatter1() {
 }
 
 static const char * formatter2() {
+    strcpy(formatterBuf, "Service: ");
+    strncat(formatterBuf, lcdLogs[LLOG_SERVICE_PROVIDER], 7);
     return formatterBuf;
 }
 
 static const char * formatter3() {
+    strcpy(formatterBuf, "Link q: ");
+    strncat(formatterBuf, lcdLogs[LLOG_LINK_QUALITY], 4);
     return formatterBuf;
 }
 
@@ -77,4 +82,11 @@ void lcdlogsInit(TLcd *plcd) {
     lcd = plcd;
 }
 
+void lcdlogsNext() {
+    currentPage++;
+    if (currentPage == MAX_PAGES) {
+        currentPage = 0;
+    }
 
+    lcdlogsRefresh();
+}

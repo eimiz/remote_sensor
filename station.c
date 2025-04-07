@@ -282,6 +282,8 @@ void measureVoltage(void *p) {
 void stationLedToggle(void *p) {
     if (ledpos++ %2 == 0) gpioOn(&GPIOB, 5);
     else gpioOff(&GPIOB, 5);
+
+lcdlogsNext();
 }
 
 void ledBlink3(void *p) {
