@@ -32,6 +32,10 @@ void gpioEnable(GPIO_Type *gpio, uint8_t pin, GpioDirection dir) {
             mode = 0;
             cnf = 0b11;
             odr = 1 << pin;
+
+            uint32_t *pGPIO_ODR = (uint32_t *)(&(gpio->gpioRegs->ODR));
+//            *pGPIO_ODR &= ~(1 << pin);
+            *pGPIO_ODR |= odr;
             break;
         default:
     }
@@ -53,9 +57,7 @@ void gpioEnable(GPIO_Type *gpio, uint8_t pin, GpioDirection dir) {
     out &= ~( 0b11 << mode_bp );  // clear bits
     out |= ( mode << mode_bp );   // set the new value
     *pGPIOC_CR = out;
-    uint32_t *pGPIO_ODR = (uint32_t *)(&(gpio->gpioRegs->ODR));
-    *pGPIO_ODR &= ~(1 << pin);
-    *pGPIO_ODR |= odr;
+
 }
 
 void gpioOff(GPIO_Type *gpio, uint8_t pin) {
