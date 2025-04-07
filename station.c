@@ -306,7 +306,7 @@ void processTasks() {
 
 void TIM2_IRQHandler() {
     ticks++;
-   // buttonProbe();
+    buttonProbe();
     processTasks();
     timerClearInt();
 
