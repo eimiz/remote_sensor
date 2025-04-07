@@ -20,6 +20,7 @@
 #include "lcdlogs.h"
 #include "modem.h"
 #include "tokenize.h"
+#include "button.h"
 
 
 #define RESETPIN 6
@@ -50,7 +51,7 @@ char buftmp[20];
 uint32_t events;
 void dallasProc(void *t);
 void measureVoltage(void *t);
-void ledBlink(void *t);
+
 void ledBlink3(void *t);
 void autostartProcess(void *t);
 void simrxWatch(void *t);
@@ -63,7 +64,7 @@ uint32_t ticks = 0;
 int tempstatus = 0;
 
 Task simrxWatchTask = {SIMRX_WATCH_EVENT, simrxWatch, 0, 0, false};
-Task blink1Task = {BLINK_EVENT, ledBlink, 500, 0, true};
+//Task blink1Task = {BLINK_EVENT, ledBlink, 500, 0, true};
 Task serviceProviderTask = {SERVICE_PROVIDER_EVENT, serviceProviderProcess, 15000, 0, true};
 //Task dallasTask = {TEMPR_EVENT, dallasProc, 1500, 0, true};
 
@@ -215,6 +216,9 @@ void stationDallas() {
     } 
 */
 }
+void stationRegisterEvent(TEvent event) {
+    events |= 1 << event;
+}
 
 void simrxWatch(void *pt) {
 //    return;
@@ -275,7 +279,7 @@ void measureVoltage(void *p) {
     uartSendStr("volt  ");
 }
 
-void ledBlink(void *p) {
+void stationLedToggle(void *p) {
     if (ledpos++ %2 == 0) gpioOn(&GPIOB, 5);
     else gpioOff(&GPIOB, 5);
 }
@@ -302,8 +306,10 @@ void processTasks() {
 
 void TIM2_IRQHandler() {
     ticks++;
+   // buttonProbe();
     processTasks();
     timerClearInt();
+
 }
 
 void USART2_IRQHandler() {
@@ -372,6 +378,7 @@ void setup() {
   gpioOn(&GPIOA, RESETPIN);
   lcdSetup();
   lcdlogsInit(&lcd);
+  buttonInit();
 }
 
 void dumpAscii() {
@@ -602,7 +609,7 @@ int main(void) {
   }
 
   stationRegisterTask(&simrxWatchTask);
-  stationRegisterTask(&blink1Task);
+
   stationRegisterTask(&serviceProviderTask);
 //  fillBufferWithRegs();
   for(;;) {

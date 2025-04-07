@@ -1,7 +1,8 @@
 #pragma once
+#include <stdbool.h>
 #include <stdint.h>
 #define __IO volatile
-typedef enum {GPIO_IN, GPIO_OUT, GPIO_OUT_APP} GpioDirection;
+typedef enum {GPIO_IN, GPIO_IN_PUP, GPIO_OUT, GPIO_OUT_APP} GpioDirection;
 typedef struct
 {
   __IO uint32_t CRL;
@@ -29,3 +30,4 @@ void gpioEnable(GPIO_Type *gpio, uint8_t pin, GpioDirection dir);
 void gpioEnableClock(GPIO_Type *gpio);
 void gpioOff(GPIO_Type *gpio, uint8_t pin);
 void gpioOn(GPIO_Type *gpio, uint8_t pin);
+bool gpioState(GPIO_Type *gpio, uint8_t pin);
