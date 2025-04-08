@@ -1,6 +1,19 @@
+#include <stdio.h>
+#include <stdbool.h>
 #include "motion.h"
 #include "gpio.h"
+#include "uart.h"
+static int extCounter = 0;
 static int gpin;
+static bool motionDetected;
+bool motionPresent() {
+    return motionDetected;
+}
+
+void motionReset() {
+    motionDetected = false;
+}
+
 void motionInit(int pin) {
     gpin = pin;
     //enable AFIO clock (not sure if needed)
@@ -36,4 +49,12 @@ void motionInit(int pin) {
 void motionClearInt() {
     uint32_t *pRTSR = (uint32_t *)(INT_BASE + 0x14);
     *pRTSR |= 1 << gpin;
+}
+
+void EXTI15_10_IRQHandler() {
+    motionDetected = true;
+    char text[32] = {0};
+    sprintf(text, "Pin changed %i", ++extCounter);
+    uartSendLog(text);
+    motionClearInt();
 }

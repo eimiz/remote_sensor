@@ -38,7 +38,7 @@ int ledpos = 1;
 int ledpos2 = 1;
 int ledpos3 = 1;
 uint8_t charPos = 0;
-static int extCounter = 0;
+
 int uart3Counter = 0;
 int uart2Counter = 0;
 int intEnaCounter = 0;
@@ -338,12 +338,7 @@ void USART3_IRQHandler() {
    // uartsimEnableInt();
 }
 
-void EXTI15_10_IRQHandler() {
-    char text[32] = {0};
-    sprintf(text, "\r\nPin changed %i\r\n", ++extCounter);
-    uartSendStr(text);
-    motionClearInt();
-}
+
 
 void DMA1_Channel6_IRQHandler() {
     clearDmaIntFlag();

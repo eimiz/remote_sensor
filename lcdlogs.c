@@ -3,8 +3,9 @@
 #include <stdlib.h>
 #include "lcdlogs.h"
 #include "uart.h"
+#include "motion.h"
 #define MIN_REFRESH_INTERVAL 1000
-#define MAX_PAGES 3
+#define MAX_PAGES 4
 static char lcdLogs[LLOG_LAST][17] = { 0 };
 static int currentPage = 0;
 static TLcd *lcd;
@@ -66,6 +67,12 @@ static const char * formatter3() {
 }
 
 static const char * formatter4() {
+    strcpy(formatterBuf, "Judejimas: ");
+    if (motionPresent())
+        strcat(formatterBuf, "TAIP");
+    else
+        strcat(formatterBuf, "NE");
+
     return formatterBuf;
 }
 

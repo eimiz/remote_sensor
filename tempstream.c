@@ -10,6 +10,7 @@
 #include "lcdlogs.h"
 #include "eutils.h"
 #include "modem.h"
+#include "motion.h"
 
 static int packetCounter = 0;
 static void tempStreamProc(void *task);
@@ -154,7 +155,13 @@ static void readTemp() {
 
 static void sendData() {
     uartSendLog("Sending data");
-    uint8_t buffer[] = {wire1.tfrac, wire1.tmain, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18};
+    uint8_t status = 0;
+    if ( motionPresent()) {
+        status = 1;
+        motionReset();
+    }
+
+    uint8_t buffer[] = {wire1.tfrac, wire1.tmain, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, status, 17, 18};
     uint8_t encbuffer[ENC_SIZE(NONCE_LEN +  CHA_COUNTER_LEN + sizeof(buffer) + HASH_LEN)];
     char logbuf[32];
 
