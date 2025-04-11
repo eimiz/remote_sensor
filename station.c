@@ -155,6 +155,7 @@ static void serviceProviderProcess(void *t) {
     }
 
     uartsimSendStr("at+cspn?\n");
+
 }
 
 static void linkQualityProcess(void *t) {
@@ -164,6 +165,7 @@ static void linkQualityProcess(void *t) {
     }
 
     uartsimSendStr("at+csq\n");
+    stationStopTask((Task *)t);
 }
 
 
@@ -183,6 +185,16 @@ bool isTaskRegistered(Task *task) {
 	for (int i = 0; i < runningTasksCount; i++) {
         if (runningTasks[i] == task) {
             return true;
+        }
+	}
+
+    return false;
+}
+
+bool stationIsTaskRunning(Task *task) {
+	for (int i = 0; i < runningTasksCount; i++) {
+        if (runningTasks[i] == task) {
+            return task->active;
         }
 	}
 
@@ -479,10 +491,11 @@ void readRxData() {
 
     switch(val) {
 
-        case 8:
+/*        case 8:
 //            events |= 1 << LCD_EVENT;
             lcdSetup();
             break;
+            */
         case 13:
             uint8_t tmpBuf[CIRC_BUF_SIZE];
             int n = cbufRead(&rxCbuf, tmpBuf, sizeof tmpBuf);

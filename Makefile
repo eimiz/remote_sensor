@@ -15,6 +15,7 @@ all: station.bin
 	
 station.bin: station.elf
 	$(OBJCOPY) -O binary $^ $@
+
 eprotocol.c: eprotocoltemp.c ../c/tempendpoint/ckey.bin
 	cp eprotocoltemp.c eprotocol.c
 	sed -i 's/$${chakey}/{$(shell hexdump  ../../c/tempendpoint/ckey.bin -e '"0x%x,"')}/g' eprotocol.c
@@ -42,3 +43,7 @@ debughost:
 .PHONY: gdb
 gdb: station.elf
 	arm-none-eabi-gdb station.elf
+
+.PHONY: size
+size: station.elf
+	arm-none-eabi-size $<
