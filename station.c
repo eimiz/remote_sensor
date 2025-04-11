@@ -537,15 +537,6 @@ void loop() {
     }
 
   checkEvents();
-  /*
-  if (!regsSent) {
-       uartSendStr("\r\n", 2);
-      uartSendStr(buffer, sizeof(buffer) -1);
-      regsSent = true;
-      timerDisableInt();
-      uartSendStr("\r\n", 2);
-  }
-  */
 }
 void fillBufferWithRegs() {
     int regdelta = 0;

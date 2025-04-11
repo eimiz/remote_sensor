@@ -6,6 +6,7 @@
 #include "modem.h"
 #include "station.h"
 #include "uartsim.h"
+#define DEFAULT_PARSING_SPEED 1200
 static TBuf cbuf;
 static void defaultParser();
 static ModemParserFunc currentParser = defaultParser;
@@ -20,6 +21,7 @@ static Task simrxWatchTask = {SIMRX_WATCH_EVENT, simrxWatch, 0, 0, false};
 static Task simPostponeWatchTask = {SIM_POSTPONE_WATCH_EVENT, simPostponeWatch, 0, 0, false};
 static Task simProcessTask = {SIMPROCESS_EVENT, uartsimProcess, 0, 0, false};
 
+static uint32_t parsingSpeed = DEFAULT_PARSING_SPEED;
 int oreCounter = 0;
 int uart3Counter = 0;
 char *modemResponseParts[TOKENIZE_MAX_PARTS];
@@ -44,6 +46,19 @@ MODEM_STATUS modemLock(ModemParserFunc func) {
     return MODEM_OK;
 }
 
+MODEM_STATUS modemLockSpeed(ModemParserFunc func, uint32_t pSpeed) {
+    if (locked) {
+        uartSendLog("Modem already locked");
+        return MODEM_LOCKED;
+    }
+
+    locked = true;
+    currentParser = func;
+    uartSendLog("Locking modem");
+    parsingSpeed = pSpeed;
+    return MODEM_OK;
+}
+
 MODEM_STATUS modemUnlock(ModemParserFunc func) {
     if (!locked) {
         uartSendLog("Unloking free modem, strange");
@@ -58,6 +73,7 @@ MODEM_STATUS modemUnlock(ModemParserFunc func) {
     locked = false;
     currentParser = defaultParser;
     uartSendLog("Unlocking modem");
+    parsingSpeed = DEFAULT_PARSING_SPEED;
     return MODEM_OK;
 }
 
@@ -71,7 +87,7 @@ void modemAddByte(uint8_t b) {
 
 static void simPostponeWatch(void *t) {
 	if (!stationIsPassThrough()) {
-	    stationPostponeTask(&simrxWatchTask, 1200);
+	    stationPostponeTask(&simrxWatchTask, parsingSpeed);
 	}
 }
 

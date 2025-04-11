@@ -132,8 +132,9 @@ static void timeParser() {
     }
     
     sprintf(buf, "20%s-%s-%s", dateparts[0], dateparts[1], dateparts[2]);
-    lcdlogsSet(LLOG_DATE, buf);
     lcdlogsSet(LLOG_TIME, parts[2]);
+    lcdlogsSet(LLOG_DATE, buf);
+    lcdlogsRefresh();
     uartSendLog("Got date, time");
     uartSendLog(buf);
     uartSendLog(parts[2]);
@@ -167,7 +168,7 @@ static const char * formatter6() {
 
 static void timeRefresh(void *t) {
 
-    if (modemLock(timeParser) != MODEM_OK) {
+    if (modemLockSpeed(timeParser, 200) != MODEM_OK) {
         return;
     }
 
