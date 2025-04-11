@@ -62,17 +62,10 @@ uint32_t ticks = 0;
 int tempstatus = 0;
 
 
-//Task blink1Task = {BLINK_EVENT, ledBlink, 500, 0, true};
 Task serviceProviderTask = {SERVICE_PROVIDER_EVENT, serviceProviderProcess, 15000, 0, true};
-//Task dallasTask = {TEMPR_EVENT, dallasProc, 1500, 0, true};
-
 Task tasks[] = {
-//    {MOTION_EVENT, measureVoltage, 6300, 0},
-
     {BLINK3_EVENT, ledBlink3, 320, 0, true},
     {TEMPR_EVENT, dallasProc, 1500, 0, true},
-
-
     {LINK_QUALITY_EVENT, linkQualityProcess, 10000, 0, true},
 //    {AUTOSTART_EVENT, autostartProcess, 20000, 0, true},
 };
@@ -164,7 +157,7 @@ static void linkQualityProcess(void *t) {
 
     uartsimSendStr("at+csq\n");
     uartSendLog("stopping task");
-    stationStopTask((Task *)t);
+//    stationStopTask((Task *)t);
 }
 
 
@@ -218,20 +211,7 @@ void stationStopTask(Task *task) {
     task->active = false;
 }
 
-void stationDallas() {
-/*
-	if (isTaskRegistered(&dallasTask) && dallasTask.active) {
-        stationStopTask(&dallasTask);
-    } else  {
-        stationStartTask(&dallasTask);
-    } 
-*/
-}
 void stationRegisterEvent(TEvent event) {
-/*    char buf[32];
-    sprintf(buf, "regging event %i", event);
-    uartSendLog(buf);
-    */
     events |= 1 << event;
 }
 
@@ -242,18 +222,9 @@ void lcdSetup() {
     delay(10);
     lcdStoreChars(&lcd);
     delay(1);
-//    const char *txt = "Labas kaip einasi?";
-//    lcdWriteText(&lcd, txt, strlen(txt));
-    
-//    lcdWriteText(&lcd,(uint8_t[]){ 0b10010000, 0b00101101, ' ', 'e'}, 4);
-
 }
 
 void dallasProc(void *p) {
-/*    sprintf(buf, "This is annoying text %i", annCnt++);
-    uartSendLog(buf);
-    return;
-    */
     if (tempstatus == 0) {
         uartSendStr("tmcfg ");
         wire1Config(&wire1);

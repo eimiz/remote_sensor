@@ -28,7 +28,7 @@ static void timeRefresh(void *t);
 RowFormatter rowFormatters[] = {formatter0, formatter1, formatter2, formatter3, formatter4, formatter5, formatter6};
 
 #define MAX_PAGES (sizeof(rowFormatters) / sizeof(rowFormatters[0]) - 1)
-Task timeRefreshTask = {TIME_REFRESH_EVENT, timeRefresh, 5000, 0, true};
+Task timeRefreshTask = {TIME_REFRESH_EVENT, timeRefresh, 1600, 0, true};
 
 void lcdlogsSet(LcdLogKey key, const char *log) {
     strncpy(lcdLogs[key], log, 16);

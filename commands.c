@@ -26,7 +26,7 @@ TCommand commands[] = {{"hello", commandHello}, {"another", commandAnother},
 stationGetOreCounter }, {"s", commandRunState}};
 
 void commandDallas() {
-    stationDallas();
+    uartSendLog("No more dallas command");
 }
 
 void commandHello() {
