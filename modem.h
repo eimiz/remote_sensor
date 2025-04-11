@@ -7,5 +7,6 @@ MODEM_STATUS modemLock(ModemParserFunc func);
 MODEM_STATUS modemUnlock(ModemParserFunc func);
 void modemAddByte(uint8_t b);
 void modemReset();
+void modemInit();
 char *modemGetPart(int index);
 int modemPartsCount();

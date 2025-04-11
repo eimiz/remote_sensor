@@ -1,6 +1,8 @@
 #include <stdbool.h>
+#include <stdio.h>
 #include "station.h"
 #include "gpio.h"
+#include "uart.h"
 
 static int counter = 0;
 bool ison = false;
@@ -23,6 +25,9 @@ void buttonProbe() {
         if (!gpioState(PGPIO, BUT_PIN)) {
             if (counter++ > CLICK_THRESH) {
                 counter = 0;
+//                char buf[32];
+//                sprintf(buf, "regging event: %i", BUTTON_EVENT);
+//                uartSendLog(buf);
                 stationRegisterEvent(BUTTON_EVENT);
                 ison = true;
                 return;

@@ -30,8 +30,7 @@ uint8_t rxbuffer[3] = {"***"};
 //int annCnt = 0;
 uint16_t bpos = 0;
 static bool receivedData = false;
-static bool simDataReceived = false;
-static bool simWatchByteReceived = false;
+
 int32_t dmaIntCounter = 0;
 static bool passThrough = false;
 int ledpos = 1;
@@ -39,11 +38,11 @@ int ledpos2 = 1;
 int ledpos3 = 1;
 uint8_t charPos = 0;
 
-int uart3Counter = 0;
+
 int uart2Counter = 0;
 int intEnaCounter = 0;
 int intDisCounter = 0;
-int oreCounter = 0;
+
 TLcd lcd;
 static TWire1 wire1;
 TBuf rxCbuf;
@@ -54,8 +53,7 @@ void measureVoltage(void *t);
 
 void ledBlink3(void *t);
 void autostartProcess(void *t);
-void simrxWatch(void *t);
-void uartsimProcess(void *t);
+
 static void linkQualityProcess(void *t);
 static void serviceProviderProcess(void *t);
 
@@ -63,7 +61,7 @@ static void serviceProviderProcess(void *t);
 uint32_t ticks = 0;
 int tempstatus = 0;
 
-Task simrxWatchTask = {SIMRX_WATCH_EVENT, simrxWatch, 0, 0, false};
+
 //Task blink1Task = {BLINK_EVENT, ledBlink, 500, 0, true};
 Task serviceProviderTask = {SERVICE_PROVIDER_EVENT, serviceProviderProcess, 15000, 0, true};
 //Task dallasTask = {TEMPR_EVENT, dallasProc, 1500, 0, true};
@@ -73,7 +71,7 @@ Task tasks[] = {
 
     {BLINK3_EVENT, ledBlink3, 320, 0, true},
     {TEMPR_EVENT, dallasProc, 1500, 0, true},
-    {SIMPROCESS_EVENT, uartsimProcess, 0, 0, false},
+
 
     {LINK_QUALITY_EVENT, linkQualityProcess, 10000, 0, true},
 //    {AUTOSTART_EVENT, autostartProcess, 20000, 0, true},
@@ -165,6 +163,7 @@ static void linkQualityProcess(void *t) {
     }
 
     uartsimSendStr("at+csq\n");
+    uartSendLog("stopping task");
     stationStopTask((Task *)t);
 }
 
@@ -229,29 +228,13 @@ void stationDallas() {
 */
 }
 void stationRegisterEvent(TEvent event) {
+/*    char buf[32];
+    sprintf(buf, "regging event %i", event);
+    uartSendLog(buf);
+    */
     events |= 1 << event;
 }
 
-void simrxWatch(void *pt) {
-//    return;
-    Task *t = (Task *)pt;
-    uartSendStr("\r\n[watch]\r\n");
-    if (simWatchByteReceived) {
-        uartSendStr("\r\n[not yet]\r\n");
-        simWatchByteReceived = false;
-    } else {
-        uartSendStr("\r\n[[simdataNotReceived]]\r\n");
-        events |= 1 << SIMPROCESS_EVENT;
-        //stop it
-        t->active = false;
-        uartSend('s');
-    }
-}
-
-void uartsimProcess(void *p) {
-   uartSendStr("[xrocess]");
-   modemProcessResponse();
-}
 
 void lcdSetup() {
     uartSendStr("lcd ");
@@ -292,6 +275,7 @@ void measureVoltage(void *p) {
 }
 
 void stationLedToggle(void *p) {
+    uartSendLog("button clicked");
     if (ledpos++ %2 == 0) gpioOn(&GPIOB, 5);
     else gpioOff(&GPIOB, 5);
 
@@ -336,19 +320,6 @@ void USART2_IRQHandler() {
     }
 }
 
-void USART3_IRQHandler() {
-    uint8_t val = uartsimRead();
-    modemAddByte(val);
-    simDataReceived = true;
-    simWatchByteReceived = true;
-   // uartsimDisableInt();
-    uart3Counter++;
-    if (UART3->SR & (1 << 3)) {
-        oreCounter++;
-    }
-
-   // uartsimEnableInt();
-}
 
 
 
@@ -388,6 +359,7 @@ void setup() {
   lcdSetup();
   lcdlogsInit(&lcd);
   buttonInit();
+  modemInit();
 }
 
 void dumpAscii() {
@@ -449,20 +421,14 @@ void configTemp() {
     }
 }
 
-void readsimData() {
 
-   // uartSendStr("**r");
-	if (!passThrough) {
-	    stationPostponeTask(&simrxWatchTask, 1200);
-	}
-}
-
+/*
 void stationReportUartStats() {
     char buf[128];
     sprintf(buf, "sim overr: %i, txcnt: %i u2cnt: %i dma: %i", oreCounter, uart3Counter, uart2Counter, dmaIntCounter);
     uartSendLog(buf);
 }
-
+*/
 
 void commandPassThrough() {
     passThrough = !passThrough;
@@ -470,6 +436,10 @@ void commandPassThrough() {
 		uartSendStr("\r\nPass through ON\r\n");
 	else
 		uartSendStr("\r\nPass through OFF\r\n");
+}
+
+bool stationIsPassThrough() {
+    return passThrough;
 }
 
 void readRxData() {
@@ -566,13 +536,6 @@ void loop() {
         uartEnableInt();
     }
 
-    if (simDataReceived) {
-        readsimData();
-       // timerDisableInt();
-        simDataReceived = false;
-       // uartsimEnableInt();
-    }
-
   checkEvents();
   /*
   if (!regsSent) {
@@ -600,7 +563,7 @@ void fillBufferWithRegs() {
 
 void stationGetOreCounter() {
     char buf[32];
-    sprintf(buf, "Ore cnt=%i\r\n", oreCounter);
+//    sprintf(buf, "Ore cnt=%i\r\n", oreCounter);
     uartSendStr(buf);
 }
 
@@ -618,7 +581,7 @@ int main(void) {
       stationRegisterTask(&tasks[i]);
   }
 
-  stationRegisterTask(&simrxWatchTask);
+
 
   stationRegisterTask(&serviceProviderTask);
 //  fillBufferWithRegs();

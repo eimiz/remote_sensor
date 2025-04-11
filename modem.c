@@ -4,13 +4,26 @@
 #include "uart.h"
 #include "tokenize.h"
 #include "modem.h"
+#include "station.h"
+#include "uartsim.h"
 static TBuf cbuf;
 static void defaultParser();
 static ModemParserFunc currentParser = defaultParser;
 static bool locked = false;
 static char bigbuf[200];
 static int partsCount = 0;
+static bool simWatchByteReceived = false;
+static void simrxWatch(void *t);
+static void uartsimProcess(void *t);
+static void simPostponeWatch(void *t);
+static Task simrxWatchTask = {SIMRX_WATCH_EVENT, simrxWatch, 0, 0, false};
+static Task simPostponeWatchTask = {SIM_POSTPONE_WATCH_EVENT, simPostponeWatch, 0, 0, false};
+static Task simProcessTask = {SIMPROCESS_EVENT, uartsimProcess, 0, 0, false};
+
+int oreCounter = 0;
+int uart3Counter = 0;
 char *modemResponseParts[TOKENIZE_MAX_PARTS];
+
 char *modemGetPart(int index) {
     return modemResponseParts[index];
 }
@@ -56,6 +69,12 @@ void modemAddByte(uint8_t b) {
     cbufWrite(&cbuf, &b, 1);
 }
 
+static void simPostponeWatch(void *t) {
+	if (!stationIsPassThrough()) {
+	    stationPostponeTask(&simrxWatchTask, 1200);
+	}
+}
+
 static void modemParseResponse() {
     uartSendStr("Parsing response\r\n");
 
@@ -81,3 +100,41 @@ void modemReset() {
     cbufInit(&cbuf);
 }
 
+static void simrxWatch(void *pt) {
+//    return;
+    Task *t = (Task *)pt;
+    uartSendLog("[watch]");
+    if (simWatchByteReceived) {
+        uartSendLog("[not yet]");
+        simWatchByteReceived = false;
+    } else {
+        uartSendLog("[[simdataNotReceived]]");
+        stationRegisterEvent(SIMPROCESS_EVENT);
+        //stop it
+        t->active = false;
+    }
+}
+
+static void uartsimProcess(void *p) {
+   uartSendLog("[xrocess]");
+   modemProcessResponse();
+}
+
+
+void USART3_IRQHandler() {
+    uint8_t val = uartsimRead();
+    modemAddByte(val);
+    simWatchByteReceived = true;
+    stationRegisterEvent(SIM_POSTPONE_WATCH_EVENT);
+    uart3Counter++;
+    if (UART3->SR & (1 << 3)) {
+        oreCounter++;
+    }
+
+}
+
+void modemInit() {
+  stationRegisterTask(&simrxWatchTask);
+  stationRegisterTask(&simPostponeWatchTask);
+  stationRegisterTask(&simProcessTask);
+}

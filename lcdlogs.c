@@ -99,6 +99,7 @@ static const char * formatter4() {
 
 static void timeParser() {
     if (currentPage != 4 &&  currentPage != 5) {
+        modemUnlock(timeParser);
         stationStopTask(&timeRefreshTask);
     }
 

@@ -74,7 +74,7 @@ static void parseEndpointDataResponse() {
         return;
     }
 
-    stationReportUartStats();
+    //stationReportUartStats();
     uartSendLog("Checking response");
     if (eproCheckResponse(responseBuffer)) {
         tempStreamAbort();
