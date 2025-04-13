@@ -151,7 +151,7 @@ static void serviceProviderProcess(void *t) {
 
 static void linkQualityProcess(void *t) {
     uartSendLog("quality process");
-    if (modemLock(linkQualityParser) != MODEM_OK) {
+    if (modemLockSpeed(linkQualityParser, 300) != MODEM_OK) {
         return;
     }
 

@@ -3,6 +3,9 @@
 #include "gpio.h"
 #include "delay.h"
 #include "eutils.h"
+#include "motion.h"
+#include "uart.h"
+#include "station.h"
 const uint8_t she[] = {
     0b00001010,
     0b00000100,
@@ -48,9 +51,23 @@ const uint8_t antenna[] = {
     0b00000100
 };
 
+void lcdTaskProcess(void *t);
+static Task task  = {LCD_EVENT, lcdTaskProcess, 1000, 0, true};
+static bool motionDetected = false;
 
 static void lcdWriteNibble(TLcd *lcd, uint8_t data, int rs);
 static void lcdWriteByte(TLcd *lcd, uint8_t data, int rs);
+void lcdTaskProcess(void *t) {
+    if (motionDetected) {
+        uartSendLog("motion callback called");
+        motionDetected = false;
+    }
+}
+
+void motionCallback() {
+    motionDetected = true;
+}
+
 void lcdInit(TLcd *lcd, int rs, int clock, int d4, int d5, int d6, int d7) {
     lcd->pos = 0;
     lcd->line = 0;
@@ -94,6 +111,8 @@ void lcdInit(TLcd *lcd, int rs, int clock, int d4, int d5, int d6, int d7) {
     //set start address
     lcdWriteData(lcd, (uint8_t[]){0b10000000}, 1, 0);
     delaymu(20);
+    motionAddListener(motionCallback);
+    stationStartTask(&task);
 }
 
 void lcdHome(TLcd *lcd) {
@@ -187,7 +206,6 @@ void lcdWriteFirstRow(TLcd *lcd, const char *str) {
 void lcdWriteSecondRow(TLcd *lcd, const char *str) {
     lcdWriteRow(lcd, str, 1);
 }
-
 
 void lcdStoreChars(TLcd *lcd) {
     lcdWriteRam(lcd, 0, she);

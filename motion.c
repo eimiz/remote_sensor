@@ -3,9 +3,13 @@
 #include "motion.h"
 #include "gpio.h"
 #include "uart.h"
+#define MAX_CALLBACKS  5
 static int extCounter = 0;
 static int gpin;
 static bool motionDetected;
+static int callbackCount = 0;
+static MotionCallback callbacks[MAX_CALLBACKS];
+
 bool motionPresent() {
     return motionDetected;
 }
@@ -51,10 +55,23 @@ void motionClearInt() {
     *pRTSR |= 1 << gpin;
 }
 
+void motionAddListener(MotionCallback motionCallback) {
+    if (callbackCount < MAX_CALLBACKS) {
+        callbacks[callbackCount++] = motionCallback;
+    }
+}
+
+static void notifyCallbacks() {
+    for (int i = 0; i < callbackCount; i++) {
+        callbacks[i]();
+    }
+}
+
 void EXTI15_10_IRQHandler() {
     motionDetected = true;
     char text[32] = {0};
     sprintf(text, "Pin changed %i", ++extCounter);
     uartSendLog(text);
     motionClearInt();
+    notifyCallbacks();
 }
