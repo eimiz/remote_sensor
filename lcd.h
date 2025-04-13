@@ -21,3 +21,4 @@ void lcdHome(TLcd *lcd);
 void lcdWriteFirstRow(TLcd *lcd, const char *str);
 void lcdWriteSecondRow(TLcd *lcd, const char *str);
 void lcdStoreChars(TLcd *lcd);
+void lcdMotionCallback();

@@ -93,7 +93,7 @@ static void serviceProviderParser() {
     }
 
     const char *srvstr = modemGetPart(1);
-    sprintf(buf, "csqstr is [%s]", srvstr);
+//    sprintf(buf, "csqstr is [%s]", srvstr);
     uartSendLog(buf);
     char *parts[TOKENIZE_MAX_PARTS];
     int partsCount = tokenize2(parts, srvstr, "\"");
@@ -250,7 +250,8 @@ void stationLedToggle(void *p) {
     if (ledpos++ %2 == 0) gpioOn(&GPIOB, 5);
     else gpioOff(&GPIOB, 5);
 
-lcdlogsNext();
+    lcdlogsNext();
+    lcdMotionCallback();
 }
 
 void ledBlink3(void *p) {

@@ -39,7 +39,6 @@ void lcdlogsSet(LcdLogKey key, const char *log) {
         {
         lcdlogsRefresh();
         lastRefresh = ticks;
-        sprintf(tmpbuf, "rticks:%i", lastRefresh);
         uartSendLog(tmpbuf);
         
     } else {
@@ -149,6 +148,7 @@ static const char * formatter5() {
     strcpy(formatterBuf, "Laiks: ");
     strcat(formatterBuf, lcdLogs[LLOG_TIME]);
     if (!stationIsTaskRunning(&timeRefreshTask)) {
+        uartSendLog("***********Starting time task");
         stationStartTask(&timeRefreshTask);
     }
 
@@ -160,6 +160,7 @@ static const char * formatter6() {
     strcpy(formatterBuf, "Data: ");
     strcat(formatterBuf, lcdLogs[LLOG_DATE]);
     if (!stationIsTaskRunning(&timeRefreshTask)) {
+        uartSendLog("***********Starting date task");
         stationStartTask(&timeRefreshTask);
     }
 

@@ -6,6 +6,9 @@
 #include "motion.h"
 #include "uart.h"
 #include "station.h"
+#define BACKLIGHT_PIN 4
+#define BACKLIGHT_GPIO (&GPIOA)
+#define BLIGHT_CNT_MAX 20
 const uint8_t she[] = {
     0b00001010,
     0b00000100,
@@ -54,6 +57,7 @@ const uint8_t antenna[] = {
 void lcdTaskProcess(void *t);
 static Task task  = {LCD_EVENT, lcdTaskProcess, 1000, 0, true};
 static bool motionDetected = false;
+static int blightCounter = 0;
 
 static void lcdWriteNibble(TLcd *lcd, uint8_t data, int rs);
 static void lcdWriteByte(TLcd *lcd, uint8_t data, int rs);
@@ -61,11 +65,20 @@ void lcdTaskProcess(void *t) {
     if (motionDetected) {
         uartSendLog("motion callback called");
         motionDetected = false;
+        blightCounter = 0;
+    }
+
+    if (blightCounter < BLIGHT_CNT_MAX){
+        blightCounter++;
+    } else if (blightCounter == BLIGHT_CNT_MAX) {
+        gpioOff(BACKLIGHT_GPIO, BACKLIGHT_PIN);
+        blightCounter++;
     }
 }
 
-void motionCallback() {
+void lcdMotionCallback() {
     motionDetected = true;
+    gpioOn(BACKLIGHT_GPIO, BACKLIGHT_PIN);
 }
 
 void lcdInit(TLcd *lcd, int rs, int clock, int d4, int d5, int d6, int d7) {
@@ -83,6 +96,7 @@ void lcdInit(TLcd *lcd, int rs, int clock, int d4, int d5, int d6, int d7) {
     gpioEnable(&GPIOB, d5, GPIO_OUT);
     gpioEnable(&GPIOB, d6, GPIO_OUT);
     gpioEnable(&GPIOB, d7, GPIO_OUT);
+    gpioEnable(BACKLIGHT_GPIO, BACKLIGHT_PIN, GPIO_OUT);
     delay(1);
     lcdWriteNibble(lcd, 0b11, 0);
     delay(5);
@@ -111,8 +125,9 @@ void lcdInit(TLcd *lcd, int rs, int clock, int d4, int d5, int d6, int d7) {
     //set start address
     lcdWriteData(lcd, (uint8_t[]){0b10000000}, 1, 0);
     delaymu(20);
-    motionAddListener(motionCallback);
+    motionAddListener(lcdMotionCallback);
     stationStartTask(&task);
+    gpioOn(BACKLIGHT_GPIO, BACKLIGHT_PIN);
 }
 
 void lcdHome(TLcd *lcd) {
