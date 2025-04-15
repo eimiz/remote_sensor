@@ -1,4 +1,6 @@
 #include <string.h>
+#include <stdio.h>
+#include <stdbool.h>
 #include "lcd.h"
 #include "gpio.h"
 #include "delay.h"
@@ -62,6 +64,7 @@ static int blightCounter = 0;
 static void lcdWriteNibble(TLcd *lcd, uint8_t data, int rs);
 static void lcdWriteByte(TLcd *lcd, uint8_t data, int rs);
 void lcdTaskProcess(void *t) {
+    char buf[32];
     if (motionDetected) {
         uartSendLog("motion callback called");
         motionDetected = false;
@@ -69,8 +72,12 @@ void lcdTaskProcess(void *t) {
     }
 
     if (blightCounter < BLIGHT_CNT_MAX){
+        sprintf(buf, "bcnt is %i", blightCounter);
+        uartSendLog(buf);
         blightCounter++;
     } else if (blightCounter == BLIGHT_CNT_MAX) {
+        sprintf(buf, "blast is %i", blightCounter);
+        uartSendLog(buf);
         gpioOff(BACKLIGHT_GPIO, BACKLIGHT_PIN);
         blightCounter++;
     }
@@ -230,4 +237,8 @@ void lcdStoreChars(TLcd *lcd) {
     lcdWriteRam(lcd, 2, deg);
     delay(1);
     lcdWriteRam(lcd, 3, antenna);
+}
+
+bool lcdIsOn() {
+    return blightCounter <= BLIGHT_CNT_MAX;
 }

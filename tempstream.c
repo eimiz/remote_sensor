@@ -34,7 +34,7 @@ static void tempStreamProc(void *task) {
 }
 
 static void tempStreamStart() {
-    lcdlogsSet(LLOG_STATUS, "Connected");
+    lcdlogsSet(LLOG_STATUS, "Prisijungta");
     tempState = MEASURE_STATE;
     uartSendLog("wire1 init");
     wire1Init(&wire1, &GPIOA, WIRE_PIN);

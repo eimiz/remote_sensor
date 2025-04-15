@@ -134,7 +134,7 @@ static void linkQualityParser() {
     }
 
     lcdlogsSet(LLOG_LINK_QUALITY, parts[1]);
-    sprintf(buf, "csq quality is [%s]\n", parts[1]);
+    sprintf(buf, "csq quality is [%s]", parts[1]);
     uartSendLog(buf);
     modemUnlock(linkQualityParser);
 }
@@ -229,7 +229,6 @@ void dallasProc(void *p) {
         uartSendStr("tmcfg ");
         wire1Config(&wire1);
         tempstatus = 1;
-        lcdWriteText(&lcd, "Init", 4);
     } else if (tempstatus == 1) {
 //        uartSendStr("measr ");
         wire1MeasureTemp(&wire1);
@@ -250,7 +249,11 @@ void stationLedToggle(void *p) {
     if (ledpos++ %2 == 0) gpioOn(&GPIOB, 5);
     else gpioOff(&GPIOB, 5);
 
-    lcdlogsNext();
+
+    if (lcdIsOn()) {
+        lcdlogsNext();
+    }
+
     lcdMotionCallback();
 }
 

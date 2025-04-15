@@ -39,7 +39,6 @@ void lcdlogsSet(LcdLogKey key, const char *log) {
         {
         lcdlogsRefresh();
         lastRefresh = ticks;
-        uartSendLog(tmpbuf);
         
     } else {
 

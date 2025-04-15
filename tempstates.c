@@ -46,12 +46,12 @@ const SimCommand  GPRS_ATTACH = {NULL, "AT+CGATT=1", "Gprs UP", ENDL};
 const SimCommand  WIRELESS_UP = {NULL, "AT+CIICR", "Wireless up", ENDL};
 const SimCommand  WIRELESS_APN = {NULL, "AT+CSTT=\"ezys\"", "APN", ENDL};
 const SimCommand  IPADDR_COMMAND = {NULL, "AT+CIFSR", NULL, ENDL}; //returns only ip address, no OK. Mandatory, otherwise ciat+cipstart won't work
-const SimCommand  CONN_COMMAND = {NULL, "at+cipstart=\"TCP\",\"88.223.53.82\",\"44556\"", "Connecting", ENDL};
+const SimCommand  CONN_COMMAND = {NULL, "at+cipstart=\"TCP\",\"88.223.53.82\",\"44556\"", "Jungiasi", ENDL};
 const SimCommand  SEND_COMMAND = {NULL, "at+cipsend", NULL, ENDL};
 const SimCommand HELLO_MAGIC = {commandHelloMagic, NULL, "Hello magic", CTRL_Z};
 const SimCommand CONSUME_SENTOK_CMD = {commandConsumeSentOk, NULL, NULL, NULL};
-const SimCommand CONSUME_NONCEHASH_CMD = {commandConsumeNonceAndHash, NULL, "Parse nonce,hash", CTRL_Z};
-const SimCommand SEND_CLIENT_HASH_CMD = {commandSendClientHash, NULL, "Sending cl hash", CTRL_Z};
+const SimCommand CONSUME_NONCEHASH_CMD = {commandConsumeNonceAndHash, NULL, "Inicijavimas 1", CTRL_Z};
+const SimCommand SEND_CLIENT_HASH_CMD = {commandSendClientHash, NULL, "Iniciavimas 2", CTRL_Z};
 
 //const SimCommand * const  ALL_COMMANDS[] = {&TEST_COMMAND, &WIRELESS_APN, &WIRELESS_UP, &IPADDR_COMMAND, &CONN_COMMAND, &SEND_COMMAND, &TEXT_COMMAND, &SEND_COMMAND, &TEXT_COMMAND2};
 const SimCommand * const  ALL_COMMANDS[] = {&TEST_COMMAND, &WIRELESS_APN, &WIRELESS_UP, &IPADDR_COMMAND, &CONN_COMMAND,
@@ -112,6 +112,7 @@ int tsResetCounter() {
 }
 
 void tsResetModemRestartStates() {
+    lcdlogsSet(LLOG_STATUS, "Restarting");
     resetCounter++;
     uartSendLog("Received error, reseting modem");
     stationResetModem();
