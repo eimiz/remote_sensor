@@ -513,6 +513,7 @@ void loop() {
 
   checkEvents();
 }
+
 void fillBufferWithRegs() {
     int regdelta = 0;
         for (int i = 0; i < 9; i++) {

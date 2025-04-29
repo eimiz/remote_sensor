@@ -1,5 +1,4 @@
 CC=arm-none-eabi-gcc
-#CC=/home/eimis/d5/progs/stcube/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.linux64_1.1.0.202410170702/tools/bin/arm-none-eabi-gcc
 OBJCOPY=arm-none-eabi-objcopy
 
 # hexdump  ../c/tempendpoint/ckey.bin -e '"%x,"'
