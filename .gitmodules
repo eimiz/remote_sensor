@@ -1,0 +1,3 @@
+[submodule "chacha20"]
+	path = chacha20
+	url = https://github.com/eimiz/chacha20
